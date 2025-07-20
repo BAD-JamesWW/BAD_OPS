@@ -22,15 +22,15 @@ def _add_gear(sender, app_data, user_data):
     padding = (child_width - button_width) // 2
 
     if dpg.is_item_shown(input_field):
-        category_name = str(dpg.get_value(input_field).strip())
+        gear_name = str(dpg.get_value(input_field).strip())
 
-        if category_name and categories.get(category_name, "doesNotExist") == "doesNotExist":
+        if gear_name and categories.get(gear_name, "doesNotExist") == "doesNotExist":
             
-            categories[category_name] = {"category_button_tag": category_name}
+            categories[gear_name] = {"gear_button_tag": gear_name}
 
             with dpg.group(horizontal=True, parent=button_container):
                 dpg.add_spacer(width=padding)
-                dpg.add_button(label=f"{category_name}", width=button_width, height=100, tag=category_name, callback=View_GearUI_TrainingOptions.start, user_data=category_name)
+                dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name, callback=View_GearUI_TrainingOptions.start, user_data=gear_name)
                 Model.testSave()
 
             dpg.hide_item(input_field)
@@ -52,13 +52,13 @@ def _remove_gear(sender, app_data, user_data):
     input_field = user_data[1]
 
     if dpg.is_item_shown(input_field):
-        category_name = dpg.get_value(input_field).strip()
+        gear_name = dpg.get_value(input_field).strip()
 
-        if category_name and categories.get(str(category_name), "doesNotExist") != "doesNotExist":
+        if gear_name and categories.get(str(gear_name), "doesNotExist") != "doesNotExist":
             
-            categoryButtonToRemove = categories.pop(str(category_name))
+            categoryButtonToRemove = categories.pop(str(gear_name))
 
-            dpg.delete_item(categoryButtonToRemove["category_button_tag"])
+            dpg.delete_item(categoryButtonToRemove["gear_button_tag"])
 
             dpg.hide_item(input_field)
             dpg.set_value(input_field, "")
@@ -78,7 +78,7 @@ def _remove_gear(sender, app_data, user_data):
 def _nuke_gear(sender, app_data, user_data):
     for category in list(categories):       
         categoryButtonToRemove = categories.pop(str(category))
-        dpg.delete_item(categoryButtonToRemove["category_button_tag"])
+        dpg.delete_item(categoryButtonToRemove["gear_button_tag"])
 
 
 #-----------------------------------------------------------------------------------------
