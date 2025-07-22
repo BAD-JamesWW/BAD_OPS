@@ -1,7 +1,8 @@
 import dearpygui.dearpygui as dpg
+import Model
 
 def show_training_graph():
-    training_data = {1: 95, 2: 110, 3: 125}
+    training_data = Model.get_past_scores()
     """
     Plots a line graph of training session scores using Dear PyGui.
 
@@ -24,10 +25,10 @@ def show_training_graph():
     if dpg.does_item_exist(graph_window_tag):
         dpg.delete_item(graph_window_tag)
 
-    with dpg.window(label="Training Graph", tag=graph_window_tag, width=700, height=500, pos=(100, 100), modal=True, no_resize=False):
+    with dpg.window(label="Training Graph", tag=graph_window_tag, width=430, height=550, pos=(100, 100), modal=True, no_resize=False):
         dpg.add_text("Training Session Scores")
 
-        with dpg.plot(label="Score Over Time", height=400, width=650, tag=plot_tag):
+        with dpg.plot(label="Score Over Time", height=500, width=430, tag=plot_tag):
             dpg.add_plot_legend()
             dpg.add_plot_axis(dpg.mvXAxis, label="Session ID", tag=x_axis_tag)
             dpg.add_plot_axis(dpg.mvYAxis, label="Score", tag=y_axis_tag)

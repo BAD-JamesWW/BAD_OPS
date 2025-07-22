@@ -8,7 +8,7 @@ dpg.create_context()
 
 #-----------------------------------------------------------------------------------------
 def _create_homeUI():
-    with dpg.window(label="Your Gear", width=800, height=500):
+    with dpg.window(label="Your Gear", width=430, height=600):
         with dpg.group(horizontal=True):
 
             # === Left Pane ===
@@ -18,7 +18,7 @@ def _create_homeUI():
             #        dpg.add_text(f"Left Item {i + 1}")
 
             # === Middle Pane ===
-            with dpg.child_window(width=380, height=400, border=False, tag="tag_middle_pane"):
+            with dpg.child_window(width=390, height=400, border=False, tag="tag_middle_pane"):
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=150)
                     dpg.add_text("Gear")
@@ -37,7 +37,7 @@ def _create_homeUI():
                     dpg.add_button(label="-", callback=View_HomeUI_Gear._remove_gear, user_data=[button_container,input_field])
                     dpg.add_button(label="!", callback=View_HomeUI_Gear._nuke_gear)
 
-    dpg.create_viewport(title="Deployment Companion", width=430, height=540)
+    dpg.create_viewport(title="Deployment Companion", width=450, height=600)
     dpg.setup_dearpygui()
     dpg.show_viewport()
     dpg.start_dearpygui()

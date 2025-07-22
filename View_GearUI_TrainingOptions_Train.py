@@ -38,9 +38,9 @@ def reset_timer():
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
 
-def show_hello_modal(sender=None, app_data=None, user_data=None):
-    if not dpg.does_item_exist("hello_modal"):
-        with dpg.window(label="Timer Modal", modal=True, tag="hello_modal", width=410, height=500,
+def show_timer(sender=None, app_data=None, user_data=None):
+    if not dpg.does_item_exist("tag_timer"):
+        with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500,
                         ):
             
             dpg.add_text("00:00:00.000", tag=timer_display_tag)
@@ -52,9 +52,9 @@ def show_hello_modal(sender=None, app_data=None, user_data=None):
                 dpg.add_button(label="Reset", callback=reset_timer)
 
             dpg.add_spacer(height=10)
-            #dpg.add_button(label="Close", callback=lambda: dpg.delete_item("hello_modal"))
+            #dpg.add_button(label="Close", callback=lambda: dpg.delete_item("tag_timer"))
     else:
-        dpg.configure_item("hello_modal", show=True)
+        dpg.configure_item("tag_timer", show=True)
 
     # Bring to front just in case
-    dpg.focus_item("hello_modal")
+    dpg.focus_item("tag_timer")

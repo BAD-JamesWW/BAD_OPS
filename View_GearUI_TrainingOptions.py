@@ -4,7 +4,7 @@ import View_GearUI_TrainingOptions_Track
 
 
 def open_training_modal(sender, app_data, user_data):
-    View_GearUI_TrainingOptions_Train.show_hello_modal()
+    View_GearUI_TrainingOptions_Train.show_timer()
 
     
 def open_tracking_modal():
@@ -24,7 +24,7 @@ def start(sender, app_data, user_data):
         dpg.delete_item(window_tag)
 
 
-    with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=410, height=500,
+    with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=430, height=558,
                     on_close=lambda: dpg.delete_item(window_tag)):
         dpg.add_text("What would you like to do?")
 

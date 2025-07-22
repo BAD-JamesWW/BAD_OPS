@@ -31,7 +31,7 @@ def _add_gear(sender, app_data, user_data):
             with dpg.group(horizontal=True, parent=button_container):
                 dpg.add_spacer(width=padding)
                 dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name, callback=View_GearUI_TrainingOptions.start, user_data=gear_name)
-                Model.testSave()
+                Model.save_new_gear()
 
             dpg.hide_item(input_field)
             dpg.set_value(input_field, "")
