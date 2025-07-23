@@ -1,11 +1,13 @@
 import dearpygui.dearpygui as dpg
 import time
+import Model
 
 # Global state
 timer_running = False
 start_time = 0
 elapsed_time = 0
 timer_display_tag = "timer_display"
+gear = ""
 
 def update_timer():
     global elapsed_time
@@ -28,9 +30,11 @@ def start_timer():
         timer_running = True
         update_timer()
 
-def stop_timer():
+def stop_timer(sender, app_data, user_data):
+    gear = user_data
     global timer_running
     timer_running = False
+    Model.save_deployment_time(dpg.get_value(timer_display_tag), f"{gear}")
 
 def reset_timer():
     global timer_running, start_time, elapsed_time
@@ -38,17 +42,22 @@ def reset_timer():
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
 
-def show_timer(sender=None, app_data=None, user_data=None):
+def show_timer(sender, app_data, user_data):
+    gear = user_data
+
+    if dpg.does_item_exist("tag_timer"):
+        dpg.delete_item("tag_timer")
+
     if not dpg.does_item_exist("tag_timer"):
         with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500,
-                        ):
+                        on_close=lambda: dpg.delete_item("tag_timer")):
             
             dpg.add_text("00:00:00.000", tag=timer_display_tag)
             dpg.add_spacer(height=10)
 
             with dpg.group(horizontal=True):
                 dpg.add_button(label="Start", callback=start_timer)
-                dpg.add_button(label="Stop", callback=stop_timer)
+                dpg.add_button(label="Stop", callback=stop_timer, user_data=gear)
                 dpg.add_button(label="Reset", callback=reset_timer)
 
             dpg.add_spacer(height=10)

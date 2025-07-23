@@ -2,10 +2,6 @@ import dearpygui.dearpygui as dpg
 import View_GearUI_TrainingOptions_Train
 import View_GearUI_TrainingOptions_Track
 
-
-def open_training_modal(sender, app_data, user_data):
-    View_GearUI_TrainingOptions_Train.show_timer()
-
     
 def open_tracking_modal():
     View_GearUI_TrainingOptions_Track.show_training_graph()
@@ -33,5 +29,5 @@ def start(sender, app_data, user_data):
                 dpg.add_button(label="Performance Tracking", callback=open_tracking_modal, width=button_width, height=100)
         with dpg.group(horizontal=True):
                 dpg.add_spacer(width=padding)
-                dpg.add_button(label="Train", callback=open_training_modal, width=button_width, height=100, user_data=gear)
+                dpg.add_button(label="Train", callback=View_GearUI_TrainingOptions_Train.show_timer, width=button_width, height=100, user_data=gear)
 

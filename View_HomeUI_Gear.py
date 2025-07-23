@@ -7,7 +7,7 @@ NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
 NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
 ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
 ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
-categories = dict()
+gears = dict()
 
 
 dpg.create_context()
@@ -24,9 +24,9 @@ def _add_gear(sender, app_data, user_data):
     if dpg.is_item_shown(input_field):
         gear_name = str(dpg.get_value(input_field).strip())
 
-        if gear_name and categories.get(gear_name, "doesNotExist") == "doesNotExist":
+        if gear_name and gears.get(gear_name, "doesNotExist") == "doesNotExist":
             
-            categories[gear_name] = {"gear_button_tag": gear_name}
+            gears[gear_name] = {"gear_button_tag": gear_name}
 
             with dpg.group(horizontal=True, parent=button_container):
                 dpg.add_spacer(width=padding)
@@ -54,11 +54,12 @@ def _remove_gear(sender, app_data, user_data):
     if dpg.is_item_shown(input_field):
         gear_name = dpg.get_value(input_field).strip()
 
-        if gear_name and categories.get(str(gear_name), "doesNotExist") != "doesNotExist":
+        if gear_name and gears.get(str(gear_name), "doesNotExist") != "doesNotExist":
             
-            categoryButtonToRemove = categories.pop(str(gear_name))
+            gearButtonToRemove = gears.pop(str(gear_name))
 
-            dpg.delete_item(categoryButtonToRemove["gear_button_tag"])
+            dpg.delete_item(gearButtonToRemove["gear_button_tag"])
+            Model.delete_deployment_time(gearButtonToRemove["gear_button_tag"])
 
             dpg.hide_item(input_field)
             dpg.set_value(input_field, "")
@@ -76,9 +77,9 @@ def _remove_gear(sender, app_data, user_data):
 
 #-----------------------------------------------------------------------------------------
 def _nuke_gear(sender, app_data, user_data):
-    for category in list(categories):       
-        categoryButtonToRemove = categories.pop(str(category))
-        dpg.delete_item(categoryButtonToRemove["gear_button_tag"])
+    for category in list(gears):       
+        gearButtonToRemove = gears.pop(str(category))
+        dpg.delete_item(gearButtonToRemove["gear_button_tag"])
 
 
 #-----------------------------------------------------------------------------------------
