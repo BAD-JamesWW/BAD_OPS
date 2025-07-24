@@ -31,7 +31,7 @@ def _add_gear(sender, app_data, user_data):
             with dpg.group(horizontal=True, parent=button_container):
                 dpg.add_spacer(width=padding)
                 dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name, callback=View_GearUI_TrainingOptions.start, user_data=gear_name)
-                Model.save_new_gear()
+                Model.save_deployment_gear(f"{gear_name}")
 
             dpg.hide_item(input_field)
             dpg.set_value(input_field, "")
@@ -59,7 +59,8 @@ def _remove_gear(sender, app_data, user_data):
             gearButtonToRemove = gears.pop(str(gear_name))
 
             dpg.delete_item(gearButtonToRemove["gear_button_tag"])
-            Model.delete_deployment_time(gearButtonToRemove["gear_button_tag"])
+            Model.delete_deployment_gear_time(gearButtonToRemove["gear_button_tag"])
+            Model.delete_deployment_gear(gearButtonToRemove["gear_button_tag"])
 
             dpg.hide_item(input_field)
             dpg.set_value(input_field, "")

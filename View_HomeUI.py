@@ -1,6 +1,7 @@
 #Description: Responsible for the Home UI as a whole.
 from dearpygui import dearpygui as dpg
 import View_HomeUI_Gear
+import Model
 
 
 dpg.create_context()
@@ -36,6 +37,16 @@ def _create_homeUI():
                     dpg.add_button(label="+", callback=View_HomeUI_Gear._add_gear, user_data=[button_container, input_field])
                     dpg.add_button(label="-", callback=View_HomeUI_Gear._remove_gear, user_data=[button_container,input_field])
                     dpg.add_button(label="!", callback=View_HomeUI_Gear._nuke_gear)
+                
+                savedGear = Model.load_deployment_gear()
+                if (savedGear):
+                    for gearName in savedGear:
+                        #Because input field here is getting values dynamically
+                        #each one needs its own input tag.
+                        gear_input_tag = dpg.generate_uuid()
+                        #creates a pre-filled input field tying the gearName with a tag
+                        dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
+                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag])             
 
     dpg.create_viewport(title="Deployment Companion", width=450, height=600)
     dpg.setup_dearpygui()

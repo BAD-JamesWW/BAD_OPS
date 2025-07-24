@@ -34,7 +34,7 @@ def stop_timer(sender, app_data, user_data):
     gear = user_data
     global timer_running
     timer_running = False
-    Model.save_deployment_time(dpg.get_value(timer_display_tag), f"{gear}")
+    Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), f"{gear}")
 
 def reset_timer():
     global timer_running, start_time, elapsed_time
