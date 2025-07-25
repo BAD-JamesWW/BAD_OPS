@@ -78,9 +78,28 @@ def _remove_gear(sender, app_data, user_data):
 
 #-----------------------------------------------------------------------------------------
 def _nuke_gear(sender, app_data, user_data):
-    for category in list(gears):       
-        gearButtonToRemove = gears.pop(str(category))
-        dpg.delete_item(gearButtonToRemove["gear_button_tag"])
+    if dpg.does_item_exist("nuke_confirm_window"):
+        dpg.delete_item("nuke_confirm_window")
+
+    def _confirm():
+        dpg.delete_item("nuke_confirm_window")
+        for gear in list(gears):
+            gearButtonToRemove = gears.pop(str(gear))
+            dpg.delete_item(gearButtonToRemove["gear_button_tag"])
+            Model.delete_deployment_gear(gearButtonToRemove["gear_button_tag"])
+            Model.delete_deployment_gear_time(gearButtonToRemove["gear_button_tag"])
+
+    def _cancel():
+        dpg.delete_item("nuke_confirm_window")
+
+    with dpg.window(label="Confirm Nuke", modal=True, tag="nuke_confirm_window", no_title_bar=True, width=360, height=150, pos=(300, 300)):
+        dpg.add_text("Are you sure you want to nuke all gear?\nThis action cannot be undone.", wrap=330)
+        dpg.add_spacer(height=20)
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Yes", width=75, callback=_confirm)
+            dpg.add_button(label="No", width=75, callback=_cancel)
+
+    
 
 
 #-----------------------------------------------------------------------------------------
