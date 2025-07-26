@@ -123,10 +123,43 @@ def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
         print(f"[Warning] Gear '{gear_name}' not found in file.")
 
 
-def get_past_scores():
-    #testing
-    training_data = {1: 95, 2: 110, 3: 125}
-    print("provide data to show on graph")
+def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.json") -> list:
+    def time_to_milliseconds(time_str):
+        hours, minutes, rest = time_str.split(':')
+        seconds, millis = rest.split('.')
+        total_millis = (
+            int(hours) * 3600000 +
+            int(minutes) * 60000 +
+            int(seconds) * 1000 +
+            int(millis)
+        )
+        return total_millis
 
-    #testing
-    return training_data
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading JSON: {e}")
+        return []
+
+    if key_name not in data:
+        popup_tag = "not_found_popup"
+
+        if dpg.does_item_exist(popup_tag):
+            dpg.delete_item(popup_tag)
+
+        with dpg.window(label="Error", modal=True, tag=popup_tag, width=300, height=120, no_resize=True, pos=(200, 200)):
+            dpg.add_text(f"'{key_name}' not found in file.")
+            dpg.add_spacing(count=2)
+            dpg.add_button(label="OK", width=75, callback=lambda: dpg.delete_item(popup_tag))
+
+        return []
+
+    time_list = data[key_name]
+    result = [
+        {"original": t, "milliseconds": time_to_milliseconds(t)}
+        for t in time_list
+    ]
+
+    return result
+
