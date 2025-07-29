@@ -25,14 +25,23 @@ vosk_model = VoskModel("vosk-model-small-en-us-0.15")
 # Initialize mixer only once
 pygame.mixer.init()
 
-def play_sound(filename):
+def play_sound(filename, wait=True):
     full_path = os.path.abspath(filename)
+    if not os.path.isfile(full_path) or os.path.getsize(full_path) == 0:
+        print(f"[Sound Error] File missing or empty: {full_path}")
+        return
+
     print(f"Playing: {full_path}")
     try:
         pygame.mixer.music.load(full_path)
         pygame.mixer.music.play()
+        if wait:
+            # Hold the program until sound finishes playing
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(30)
     except Exception as e:
         print("Audio playback failed:", e)
+
 
 def update_timer():
     global elapsed_time
@@ -104,7 +113,7 @@ def listen_for_commands():
         print(f"Starting timer in {delay} seconds...")
         time.sleep(delay)
         reset_timer()
-        play_sound("assets/audio/deploy.wav")
+        play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()
 
         print("Say 'stop' to stop the timer.")
@@ -122,9 +131,10 @@ def listen_for_commands():
 
             if speech.endswith("stop") or speech == "stop":
                 stop_timer_internal()
-                play_sound("assets/audio/cease.wav")
                 current_round += 1
                 stop_detected = True
+                play_sound("assets/audio/heard.wav")
+
 
     stream.stop_stream()
     stream.close()
