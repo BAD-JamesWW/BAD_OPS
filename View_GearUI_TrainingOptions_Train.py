@@ -14,47 +14,40 @@ import ctypes
 timer_running = False
 start_time = 0
 elapsed_time = 0
-timer_display_tag = "timer_display"
 gear = ""
 repetitions = 1
 current_round = 0
+session_active = False
+timer_display_tag = "timer_display"
 
-# Load Vosk model (once)
+# Load voice model and audio
 vosk_model = VoskModel("vosk-model-small-en-us-0.15")
-
-# Initialize mixer only once
 pygame.mixer.init()
 
 def play_sound(filename, wait=True):
-    full_path = os.path.abspath(filename)
-    if not os.path.isfile(full_path) or os.path.getsize(full_path) == 0:
-        print(f"[Sound Error] File missing or empty: {full_path}")
+    path = os.path.abspath(filename)
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        print(f"[Sound Error] File missing or empty: {path}")
         return
-
-    print(f"Playing: {full_path}")
     try:
-        pygame.mixer.music.load(full_path)
+        pygame.mixer.music.load(path)
         pygame.mixer.music.play()
         if wait:
-            # Hold the program until sound finishes playing
             while pygame.mixer.music.get_busy():
                 pygame.time.Clock().tick(30)
     except Exception as e:
         print("Audio playback failed:", e)
-
 
 def update_timer():
     global elapsed_time
     if timer_running:
         current_time = time.perf_counter()
         elapsed_time = current_time - start_time
-
-        hours, rem = divmod(elapsed_time, 3600)
-        minutes, rem = divmod(rem, 60)
-        seconds = int(rem)
-        milliseconds = int((rem - seconds) * 1000)
-
-        dpg.set_value(timer_display_tag, f"{int(hours):02}:{int(minutes):02}:{seconds:02}.{milliseconds:03}")
+        h, rem = divmod(elapsed_time, 3600)
+        m, rem = divmod(rem, 60)
+        s = int(rem)
+        ms = int((rem - s) * 1000)
+        dpg.set_value(timer_display_tag, f"{int(h):02}:{int(m):02}:{s:02}.{ms:03}")
         dpg.set_frame_callback(dpg.get_frame_count() + 1, update_timer)
 
 def start_timer():
@@ -67,45 +60,63 @@ def start_timer():
 def stop_timer_internal():
     global timer_running
     timer_running = False
-    Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), f"{gear}")
+    Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), gear)
 
 def reset_timer():
-    global timer_running, start_time, elapsed_time
+    global timer_running, elapsed_time
     timer_running = False
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
 
+def stop_training_early():
+    global timer_running, elapsed_time, session_active
+    timer_running = False
+    elapsed_time = 0
+    dpg.set_value(timer_display_tag, "00:00:00.000")
+    print("[Notice] Training stopped early (no log).")
+    session_active = False
+    enable_ui_controls()
+
 def raise_thread_priority():
     try:
         ctypes.windll.kernel32.SetThreadPriority(
-            ctypes.windll.kernel32.GetCurrentThread(), 2  # THREAD_PRIORITY_HIGHEST
-        )
-        print("Thread priority raised.")
+            ctypes.windll.kernel32.GetCurrentThread(), 2)
     except Exception as e:
         print("Could not raise thread priority:", e)
 
+def disable_ui_controls():
+    dpg.disable_item("start_session_btn")
+    dpg.disable_item("reset_btn")
+    dpg.disable_item("repetition_input")
+    set_window_closable(False)
+
+def enable_ui_controls():
+    dpg.enable_item("start_session_btn")
+    dpg.enable_item("reset_btn")
+    dpg.enable_item("repetition_input")
+    set_window_closable(True)
+
+def set_window_closable(state: bool):
+    dpg.configure_item("tag_timer", no_title_bar=not state)
+
 def listen_for_commands():
-    global current_round, repetitions
+    global current_round, repetitions, session_active
 
-    raise_thread_priority()  # Windows only
-
+    raise_thread_priority()
     mic = pyaudio.PyAudio()
-    stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True,
-                      frames_per_buffer=1024)
+    stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000,
+                      input=True, frames_per_buffer=1024)
     stream.start_stream()
-
     recognizer = KaldiRecognizer(vosk_model, 16000)
 
     while current_round < repetitions:
         print(f"[ROUND {current_round+1}/{repetitions}] Say 'ready' to begin...")
         play_sound("assets/audio/ready.wav")
 
-        # Wait for "ready"
         while True:
             data = stream.read(1024, exception_on_overflow=False)
             if recognizer.AcceptWaveform(data):
-                result = json.loads(recognizer.Result())
-                if result.get("text") == "ready":
+                if json.loads(recognizer.Result()).get("text") == "ready":
                     play_sound("assets/audio/tenfour.wav")
                     break
 
@@ -116,25 +127,18 @@ def listen_for_commands():
         play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()
 
+        recognizer.Reset()
         print("Say 'stop' to stop the timer.")
-        recognizer.Reset()  # flush anything previously captured
-
-        stop_detected = False
-        while not stop_detected:
+        while True:
             data = stream.read(1024, exception_on_overflow=False)
-
             if recognizer.AcceptWaveform(data):
-                continue  # skip full results
-
-            partial = json.loads(recognizer.PartialResult())
-            speech = partial.get("partial", "").strip()
-
+                continue
+            speech = json.loads(recognizer.PartialResult()).get("partial", "").strip()
             if speech.endswith("stop") or speech == "stop":
                 stop_timer_internal()
                 current_round += 1
-                stop_detected = True
                 play_sound("assets/audio/heard.wav")
-
+                break
 
     stream.stop_stream()
     stream.close()
@@ -142,11 +146,17 @@ def listen_for_commands():
 
     print("All repetitions completed.")
     play_sound("assets/audio/training_complete.wav")
+    session_active = False
+    enable_ui_controls()
 
 def start_session_callback():
-    global current_round, repetitions
+    global current_round, repetitions, session_active
+    if session_active:
+        return
     current_round = 0
     repetitions = int(dpg.get_value("repetition_input"))
+    session_active = True
+    disable_ui_controls()
     threading.Thread(target=listen_for_commands, daemon=True).start()
 
 def show_timer(sender, app_data, user_data):
@@ -156,17 +166,16 @@ def show_timer(sender, app_data, user_data):
     if dpg.does_item_exist("tag_timer"):
         dpg.delete_item("tag_timer")
 
-    with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500,
-                    on_close=lambda: dpg.delete_item("tag_timer")):
-
+    with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500, no_title_bar=False):
         dpg.add_text("00:00:00.000", tag=timer_display_tag)
         dpg.add_spacer(height=10)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Reset", callback=reset_timer)
+            dpg.add_button(label="Reset", callback=reset_timer, tag="reset_btn")
+            dpg.add_button(label="Stop Training (No Log)", callback=stop_training_early)
 
         dpg.add_spacer(height=10)
         dpg.add_input_int(label="Repetitions (N)", default_value=1, tag="repetition_input", min_value=1)
-        dpg.add_button(label="Start Session (Voice-Controlled)", callback=start_session_callback)
+        dpg.add_button(label="Start Session (Voice-Controlled)", callback=start_session_callback, tag="start_session_btn")
 
     dpg.focus_item("tag_timer")
