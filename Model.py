@@ -156,10 +156,18 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
         return []
 
     time_list = data[key_name]
-    result = [
-        {"original": t, "milliseconds": time_to_milliseconds(t)}
-        for t in time_list
-    ]
+    result = []
+
+    for t in time_list:
+        if isinstance(t, str) and t.strip().lower() == "botched":
+            result.append({"original": t, "milliseconds": "botched"})
+        else:
+            try:
+                ms = time_to_milliseconds(t)
+                result.append({"original": t, "milliseconds": ms})
+            except Exception as e:
+                print(f"Skipping malformed time '{t}': {e}")
 
     return result
+
 

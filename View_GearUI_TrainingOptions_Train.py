@@ -57,10 +57,13 @@ def start_timer():
         timer_running = True
         update_timer()
 
-def stop_timer_internal():
+def stop_timer_internal(botched = False):
     global timer_running
     timer_running = False
-    Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), gear)
+    if not botched:
+        Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), gear)
+    else:
+        Model.save_deployment_gear_time("botched", gear)
 
 def reset_timer():
     global timer_running, elapsed_time
@@ -137,6 +140,10 @@ def listen_for_commands():
             if speech.endswith("stop") or speech == "stop":
                 stop_timer_internal()
                 current_round += 1
+                play_sound("assets/audio/heard.wav")
+                break
+            elif speech.endswith("botch") or speech == "botch":
+                stop_timer_internal(botched=True)
                 play_sound("assets/audio/heard.wav")
                 break
 
