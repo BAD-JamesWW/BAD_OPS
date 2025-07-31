@@ -16,7 +16,20 @@ def format_milliseconds(ms):
     milliseconds = ms % 1000
     return f"{hours:02}:{minutes:02}:{seconds:02}.{milliseconds:03}"
 
+# Store annotation tags globally for toggle use
+annotation_tags = []
+annotations_visible = True  # Toggle state tracker
+
+def toggle_annotations():
+    global annotations_visible
+    annotations_visible = not annotations_visible
+    for tag in annotation_tags:
+        dpg.configure_item(tag, show=annotations_visible)
+
 def show_training_graph(sender=None, app_data=None, user_data=None):
+    global annotation_tags
+    annotation_tags.clear()  # Reset when graph is refreshed
+
     gear = user_data
     training_data = Model.get_sorted_times_by_key(gear)
 
@@ -32,6 +45,9 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     session_index = 1
     prev_y = None
 
+    total_time = 0
+    count = 0
+
     for entry in training_data:
         ms = entry["milliseconds"]
         if ms == "botched":
@@ -44,6 +60,8 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
                 annotations.append((session_index, prev_y, "BOTCHED"))
         else:
             y_val = ms / 1000
+            total_time += ms
+            count += 1
             current_x.append(session_index)
             current_y.append(y_val)
             scatter_x.append(session_index)
@@ -54,6 +72,9 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
 
     if current_x and current_y:
         line_segments.append((current_x, current_y))
+
+    avg_time = total_time // count if count > 0 else 0
+    avg_time_formatted = format_milliseconds(avg_time)
 
     graph_window_tag = "training_graph_window"
     plot_tag = "training_graph_plot"
@@ -66,6 +87,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
 
     with dpg.window(label="Training Graph", tag=graph_window_tag, width=480, height=580, modal=True, no_resize=False, pos=(100, 100)):
         dpg.add_text(f"Training Session Scores for {gear}")
+
         with dpg.plot(label="Score Over Time", height=500, width=460, tag=plot_tag):
             dpg.add_plot_legend()
             with dpg.plot_axis(dpg.mvXAxis, label="", no_tick_labels=True):
@@ -85,6 +107,11 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
             if botched_x:
                 dpg.add_scatter_series(botched_x, botched_y, label="Botched", tag=botched_tag, parent=y_axis_tag)
 
+        # Below the plot
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Toggle Annotations", callback=toggle_annotations)
+            dpg.add_text(f"Avg Speed: {avg_time_formatted}")
+
     # Themes
     with dpg.theme() as scatter_theme:
         with dpg.theme_component(dpg.mvScatterSeries):
@@ -102,10 +129,12 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
 
     # Add annotations that match exact dot values
     for i, (x, y, label) in enumerate(annotations):
+        tag = f"label_{i}"
+        annotation_tags.append(tag)
         dpg.add_plot_annotation(
             default_value=(x, y - 0.2),
             label=label,
             parent=plot_tag,
             clamped=True,
-            tag=f"label_{i}"
+            tag=tag
         )
