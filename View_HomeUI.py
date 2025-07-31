@@ -9,7 +9,10 @@ dpg.create_context()
 
 #-----------------------------------------------------------------------------------------
 def _create_homeUI():
-    with dpg.window(label="Your Gear", width=430, height=600):
+    with dpg.window(label="Your Gear",tag="home_ui_parent_window", width=430, height=600):
+        
+        dpg.configure_item("home_ui_parent_window", no_title_bar=True)
+
         with dpg.group(horizontal=True):
 
             # === Left Pane ===

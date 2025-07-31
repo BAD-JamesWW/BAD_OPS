@@ -173,7 +173,7 @@ def show_timer(sender, app_data, user_data):
     if dpg.does_item_exist("tag_timer"):
         dpg.delete_item("tag_timer")
 
-    with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500, no_title_bar=False):
+    with dpg.window(label="Timer", modal=True, tag="tag_timer", width=410, height=500, no_title_bar=False, no_move=True):
         dpg.add_text("00:00:00.000", tag=timer_display_tag)
         dpg.add_spacer(height=10)
 

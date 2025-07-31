@@ -85,7 +85,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     if dpg.does_item_exist(graph_window_tag):
         dpg.delete_item(graph_window_tag)
 
-    with dpg.window(label="Training Graph", tag=graph_window_tag, width=480, height=580, modal=True, no_resize=False, pos=(100, 100)):
+    with dpg.window(label="Training Graph", tag=graph_window_tag, width=480, height=580, modal=True, no_move=True, no_resize=False, pos=(100, 100)):
         dpg.add_text(f"Training Session Scores for {gear}")
 
         with dpg.plot(label="Score Over Time", height=500, width=460, tag=plot_tag):

@@ -15,7 +15,7 @@ def start(sender, app_data, user_data):
 
 
     with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=430, height=558,
-                    on_close=lambda: dpg.delete_item(window_tag)):
+                    on_close=lambda: dpg.delete_item(window_tag), no_move=True):
         dpg.add_text("What would you like to do?")
 
         with dpg.group(horizontal=True):
