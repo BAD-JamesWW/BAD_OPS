@@ -80,7 +80,7 @@ def _create_homeUI():
                     for gearName in savedGear:
                         gear_input_tag = dpg.generate_uuid()
                         dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
-                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag])
+                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window"])
 
 # -----------------------------------------------------------------------------------------
 dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=440, height=600, resizable=False)

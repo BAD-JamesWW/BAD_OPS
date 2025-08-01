@@ -19,6 +19,7 @@ with dpg.theme() as red_button_theme:
 def _add_gear(sender, app_data, user_data):
     button_container = user_data[0]
     input_field = user_data[1]
+    home_ui_window = user_data[2]
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
@@ -31,7 +32,7 @@ def _add_gear(sender, app_data, user_data):
             with dpg.group(horizontal=True, parent=button_container):
                 dpg.add_spacer(width=padding)
                 dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name,
-                               callback=View_GearUI_TrainingOptions.start, user_data=gear_name)
+                               callback=View_GearUI_TrainingOptions.start, user_data=[gear_name, home_ui_window])
                 dpg.bind_item_theme(gear_name, red_button_theme)
                 Model.save_deployment_gear(f"{gear_name}")
             dpg.hide_item(input_field)

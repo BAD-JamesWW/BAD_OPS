@@ -1,5 +1,7 @@
 import dearpygui.dearpygui as dpg
 import Model
+import pygame
+import os
 
 def time_to_milliseconds(time_str):
     if time_str.count(":") != 2 or "." not in time_str:
@@ -35,6 +37,8 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
 
     if len(training_data) == 0:
         return
+
+    play_sound("assets/audio/ui_sound_02.wav", wait=False)
 
     line_segments = []
     current_x, current_y = [], []
@@ -138,3 +142,17 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
             clamped=True,
             tag=tag
         )
+
+def play_sound(filename, wait=True):
+    path = os.path.abspath(filename)
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        print(f"[Sound Error] File missing or empty: {path}")
+        return
+    try:
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.play()
+        if wait:
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(30)
+    except Exception as e:
+        print("Audio playback failed:", e)
