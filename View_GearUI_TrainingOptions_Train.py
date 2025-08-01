@@ -123,9 +123,15 @@ def listen_for_commands():
                     play_sound("assets/audio/tenfour.wav")
                     break
 
-        delay = random.randint(0, 20)
+        delay = random.randint(1, 20)
         print(f"Starting timer in {delay} seconds...")
-        time.sleep(delay)
+        
+        #So timer can make sound every second
+        for i in range(delay):
+            play_sound("assets/audio/ui_sound_04.wav", wait=False)
+            time.sleep(1)
+            i += 1
+        
         reset_timer()
         play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()

@@ -65,7 +65,7 @@ def _create_homeUI():
 
                 with dpg.group(horizontal=False):
                     plus_btn = dpg.add_button(label="+", callback=View_HomeUI_Gear._add_gear,
-                                              user_data=[button_container, input_field])
+                                              user_data=[button_container, input_field, "home_ui_parent_window", False])
                     dpg.bind_item_theme(plus_btn, red_button_theme)
 
                     minus_btn = dpg.add_button(label="-", callback=View_HomeUI_Gear._remove_gear,
@@ -80,7 +80,7 @@ def _create_homeUI():
                     for gearName in savedGear:
                         gear_input_tag = dpg.generate_uuid()
                         dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
-                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window"])
+                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
 
 # -----------------------------------------------------------------------------------------
 dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=440, height=600, resizable=False)

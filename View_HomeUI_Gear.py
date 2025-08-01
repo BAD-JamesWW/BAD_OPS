@@ -1,6 +1,8 @@
 from dearpygui import dearpygui as dpg
 import View_GearUI_TrainingOptions
 import Model
+import pygame
+import os
 
 NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
 NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
@@ -20,9 +22,14 @@ def _add_gear(sender, app_data, user_data):
     button_container = user_data[0]
     input_field = user_data[1]
     home_ui_window = user_data[2]
+    loading_status = user_data[3]
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
+
+    #So sound plays ony if loading status is false
+    if loading_status == False:
+        play_sound("assets/audio/ui_sound_03.wav", wait=False)
 
     if dpg.is_item_shown(input_field):
         gear_name = str(dpg.get_value(input_field).strip())
@@ -44,6 +51,7 @@ def _add_gear(sender, app_data, user_data):
         dpg.show_item(input_field)
 
 def _remove_gear(sender, app_data, user_data):
+    play_sound("assets/audio/ui_sound_03.wav", wait=False)
     input_field = user_data[1]
     if dpg.is_item_shown(input_field):
         gear_name = dpg.get_value(input_field).strip()
@@ -63,6 +71,8 @@ def _remove_gear(sender, app_data, user_data):
 def _nuke_gear(sender, app_data, user_data):
     if dpg.does_item_exist("nuke_confirm_window"):
         dpg.delete_item("nuke_confirm_window")
+
+    play_sound("assets/audio/ui_sound_03.wav", wait=False)
 
     def _confirm():
         dpg.delete_item("nuke_confirm_window")
@@ -121,3 +131,17 @@ def _popup_add_gear_failed(isInputEmpty):
         dpg.bind_item_handler_registry(ALREADY_EXISTENT_GEAR_WINDOW_TAG, ALREADY_EXISTENT_GEAR_HANDLER_TAG)
     except Exception:
         pass
+
+def play_sound(filename, wait=True):
+    path = os.path.abspath(filename)
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        print(f"[Sound Error] File missing or empty: {path}")
+        return
+    try:
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.play()
+        if wait:
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(30)
+    except Exception as e:
+        print("Audio playback failed:", e)
