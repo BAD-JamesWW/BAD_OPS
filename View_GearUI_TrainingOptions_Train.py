@@ -91,12 +91,18 @@ def disable_ui_controls():
     dpg.disable_item("start_session_btn")
     dpg.disable_item("reset_btn")
     dpg.disable_item("repetition_input")
+    dpg.hide_item("start_session_btn")
+    dpg.hide_item("reset_btn")
+    dpg.hide_item("repetition_input")
     set_window_closable(False)
 
 def enable_ui_controls():
     dpg.enable_item("start_session_btn")
     dpg.enable_item("reset_btn")
     dpg.enable_item("repetition_input")
+    dpg.show_item("start_session_btn")
+    dpg.show_item("reset_btn")
+    dpg.show_item("repetition_input")
     set_window_closable(True)
 
 def set_window_closable(state: bool):
@@ -125,12 +131,21 @@ def listen_for_commands():
 
         delay = random.randint(1, 20)
         print(f"Starting timer in {delay} seconds...")
-        
+                
         #So timer can make sound every second
         for i in range(delay):
             play_sound("assets/audio/ui_sound_04.wav", wait=False)
             time.sleep(1)
             i += 1
+            #So timer can be stopped during countdown.
+            if session_active == False:
+                reset_timer()
+                recognizer.Reset()
+                stream.stop_stream()
+                stream.close()
+                mic.terminate()
+                return
+                
         
         reset_timer()
         play_sound("assets/audio/deploy.wav", wait=False)
