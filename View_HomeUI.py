@@ -2,8 +2,74 @@
 from dearpygui import dearpygui as dpg
 import View_HomeUI_Gear
 import Model
+import pygame
+import os
 
 dpg.create_context()
+
+inputInProgress = False
+
+def _show_input_field(sender, app_data, user_data):
+    global inputInProgress
+
+    if inputInProgress == True:
+        return
+    inputInProgress = True
+    
+    button_container = user_data[0]
+    fieldType = user_data[1]
+    input_tag = f"gear_input_field_{fieldType}"
+
+    # Remove old input field if it exists
+    if dpg.does_item_exist(input_tag):
+        dpg.delete_item(input_tag)
+
+    # Get all children of the parent
+    children = dpg.get_item_children(button_container, 1)  # slot 1 = item slot for child items
+
+    # Choose an item to insert before, or None if no children exist
+    before_tag = children[0] if children else None
+
+    # Create the input field with proper callback and data
+    if fieldType == "add":
+        play_sound("assets/audio/ui_sound_03.wav", wait=False)
+        dpg.add_input_text(
+            parent=button_container,
+            label="Enter gear name:",
+            tag=input_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=View_HomeUI_Gear._add_gear,
+            user_data=[button_container, input_tag, "home_ui_parent_window"]
+        )
+
+    elif fieldType == "remove":
+        play_sound("assets/audio/ui_sound_03.wav", wait=False)
+        dpg.add_input_text(
+            parent=button_container,
+            label="Enter gear name:",
+            tag=input_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=View_HomeUI_Gear._remove_gear,
+            user_data=[button_container, input_tag]
+        )
+
+
+def play_sound(filename, wait=True):
+    path = os.path.abspath(filename)
+    if not os.path.isfile(path) or os.path.getsize(path) == 0:
+        print(f"[Sound Error] File missing or empty: {path}")
+        return
+    try:
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.play()
+        if wait:
+            while pygame.mixer.music.get_busy():
+                pygame.time.Clock().tick(30)
+    except Exception as e:
+        print("Audio playback failed:", e)
+
 
 # -----------------------------------------------------------------------------------------
 def _create_homeUI():
@@ -52,8 +118,6 @@ def _create_homeUI():
                     dpg.add_spacer(width=150)
                     dpg.add_text("Gear")
 
-                input_field = dpg.add_input_text(parent="tag_middle_pane", label="Enter gear name:")
-                dpg.hide_item(input_field)
 
                 button_container = dpg.add_child_window(width=-1, height=-1, border=False)
 
@@ -64,12 +128,12 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
-                    plus_btn = dpg.add_button(label="+", callback=View_HomeUI_Gear._add_gear,
-                                              user_data=[button_container, input_field, "home_ui_parent_window", False])
+                    plus_btn = dpg.add_button(label="+", callback=_show_input_field,
+                                              user_data=[button_container,"add"])
                     dpg.bind_item_theme(plus_btn, red_button_theme)
 
-                    minus_btn = dpg.add_button(label="-", callback=View_HomeUI_Gear._remove_gear,
-                                               user_data=[button_container, input_field])
+                    minus_btn = dpg.add_button(label="-", callback=_show_input_field,
+                                               user_data=[button_container,"remove"])
                     dpg.bind_item_theme(minus_btn, red_button_theme)
 
                     exclaim_btn = dpg.add_button(label="!", callback=View_HomeUI_Gear._nuke_gear)

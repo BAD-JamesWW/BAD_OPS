@@ -1,5 +1,6 @@
 from dearpygui import dearpygui as dpg
 import View_GearUI_TrainingOptions
+import View_HomeUI
 import Model
 import pygame
 import os
@@ -20,19 +21,16 @@ with dpg.theme() as red_button_theme:
 
 def _add_gear(sender, app_data, user_data):
     button_container = user_data[0]
-    input_field = user_data[1]
+    input_tag = user_data[1]
     home_ui_window = user_data[2]
-    loading_status = user_data[3]
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
 
-    #So sound plays ony if loading status is false
-    if loading_status == False:
-        play_sound("assets/audio/ui_sound_03.wav", wait=False)
+    View_HomeUI.inputInProgress = False
 
-    if dpg.is_item_shown(input_field):
-        gear_name = str(dpg.get_value(input_field).strip())
+    if dpg.is_item_shown(input_tag):
+        gear_name = str(dpg.get_value(input_tag).strip())
 
         if gear_name and gears.get(gear_name, "doesNotExist") == "doesNotExist":
             gears[gear_name] = {"gear_button_tag": gear_name}
@@ -42,31 +40,31 @@ def _add_gear(sender, app_data, user_data):
                                callback=View_GearUI_TrainingOptions.start, user_data=[gear_name, home_ui_window])
                 dpg.bind_item_theme(gear_name, red_button_theme)
                 Model.save_deployment_gear(f"{gear_name}")
-            dpg.hide_item(input_field)
-            dpg.set_value(input_field, "")
+            dpg.hide_item(input_tag)
+            dpg.set_value(input_tag, "")
         else:
-            _popup_add_gear_failed(isInputEmpty=(dpg.get_value(input_field).strip() == ""))
-            dpg.set_value(input_field, "")
+            _popup_add_gear_failed(isInputEmpty=(dpg.get_value(input_tag).strip() == ""))
+            dpg.set_value(input_tag, "")
     else:
-        dpg.show_item(input_field)
+        dpg.show_item(input_tag)
 
 def _remove_gear(sender, app_data, user_data):
-    play_sound("assets/audio/ui_sound_03.wav", wait=False)
-    input_field = user_data[1]
-    if dpg.is_item_shown(input_field):
-        gear_name = dpg.get_value(input_field).strip()
+    View_HomeUI.inputInProgress = False
+    input_tag = user_data[1]
+    if dpg.is_item_shown(input_tag):
+        gear_name = dpg.get_value(input_tag).strip()
         if gear_name and gears.get(str(gear_name), "doesNotExist") != "doesNotExist":
             gearButtonToRemove = gears.pop(str(gear_name))
             dpg.delete_item(gearButtonToRemove["gear_button_tag"])
             Model.delete_deployment_gear_time(gearButtonToRemove["gear_button_tag"])
             Model.delete_deployment_gear(gearButtonToRemove["gear_button_tag"])
-            dpg.hide_item(input_field)
-            dpg.set_value(input_field, "")
+            dpg.hide_item(input_tag)
+            dpg.set_value(input_tag, "")
         else:
-            _popup_remove_gear_failed(isInputEmpty=(dpg.get_value(input_field).strip() == ""))
-            dpg.set_value(input_field, "")
+            _popup_remove_gear_failed(isInputEmpty=(dpg.get_value(input_tag).strip() == ""))
+            dpg.set_value(input_tag, "")
     else:
-        dpg.show_item(input_field)
+        dpg.show_item(input_tag)
 
 def _nuke_gear(sender, app_data, user_data):
     if dpg.does_item_exist("nuke_confirm_window"):
