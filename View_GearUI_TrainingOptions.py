@@ -19,11 +19,12 @@ def start(sender, app_data, user_data):
     dpg.hide_item(previous_window)
     play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
-    with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=430, height=570,
+    with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=445, height=570,
                     on_close=lambda: (dpg.show_item(previous_window), play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag)), no_move=True):
         dpg.add_text("What would you like to do?")
 
-        with dpg.theme() as training_options_full_theme:
+        # === Parent Window Theme ===
+        with dpg.theme() as parent_theme:
             with dpg.theme_component(dpg.mvWindowAppItem):
                 # Transparent window background
                 dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (0, 0, 0, 50))
@@ -33,11 +34,8 @@ def start(sender, app_data, user_data):
                 # Optional: border color (dark grey)
                 dpg.add_theme_color(dpg.mvThemeCol_Border, (20, 20, 20, 150))
 
-        dpg.bind_item_theme(window_tag, training_options_full_theme)
+        dpg.bind_item_theme(window_tag, parent_theme)
 
-
-
-        
         # === Red Button Highlight Theme ===
         with dpg.theme() as red_button_theme:
             with dpg.theme_component(dpg.mvButton):

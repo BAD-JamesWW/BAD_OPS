@@ -83,20 +83,42 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     graph_window_tag = "training_graph_window"
     plot_tag = "training_graph_plot"
     y_axis_tag = "training_graph_yaxis"
+    x_axis_tag = "training_graph_xaxis"
     scatter_tag = "training_graph_scatter"
     botched_tag = "botched_scatter"
 
     if dpg.does_item_exist(graph_window_tag):
         dpg.delete_item(graph_window_tag)
 
-    with dpg.window(label="Training Graph", tag=graph_window_tag, width=480, height=580, modal=True, no_move=True, no_resize=False, pos=(100, 100)):
+    with dpg.window(tag=graph_window_tag, width=445, height=570, no_move=True, no_resize=True, no_collapse=True, pos=(0, 0), on_close=lambda: play_sound("assets/audio/ui_sound_05.wav", wait=False)):
         dpg.add_text(f"Training Session Scores for {gear}")
 
-        with dpg.plot(label="Score Over Time", height=500, width=460, tag=plot_tag):
+        # === Parent Window Theme ===
+        with dpg.theme() as parent_theme:
+            with dpg.theme_component(dpg.mvWindowAppItem):
+                # Transparent window background
+                #dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (0, 0, 0, 50))
+                # Title bar background (normal and active)
+                dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (0, 0, 0, 250))
+                dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (0, 0, 0, 250))
+                # Optional: border color (dark grey)
+                dpg.add_theme_color(dpg.mvThemeCol_Border, (20, 20, 20, 150))
+        dpg.bind_item_theme(graph_window_tag, parent_theme)
+
+        # === Red Button Highlight Theme ===
+        with dpg.theme() as red_button_theme:
+            with dpg.theme_component(dpg.mvButton):
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))  # Dark red hover
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))   # Bright red active
+
+        with dpg.plot(label="Score Over Time", height=470, width=430, tag=plot_tag, no_box_select=True, no_menus=True):
             dpg.add_plot_legend()
-            with dpg.plot_axis(dpg.mvXAxis, label="", no_tick_labels=True):
+            with dpg.plot_axis(dpg.mvXAxis, label="", no_tick_labels=True, tag=x_axis_tag):
+                dpg.configure_item(x_axis_tag, no_highlight=True)
                 pass
             dpg.add_plot_axis(dpg.mvYAxis, label="Time (seconds)", tag=y_axis_tag)
+            dpg.configure_item(y_axis_tag, no_highlight=True)
+
 
             for idx, (lx, ly) in enumerate(line_segments):
                 line_tag = f"line_segment_{idx}"
@@ -113,7 +135,8 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
 
         # Below the plot
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Toggle Annotations", callback=toggle_annotations)
+            dpg.add_button(label="Toggle Annotations",tag="toggle_annotations", callback=toggle_annotations)
+            dpg.bind_item_theme("toggle_annotations", red_button_theme)
             dpg.add_text(f"Avg Speed: {avg_time_formatted}")
 
     # Themes

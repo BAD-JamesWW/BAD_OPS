@@ -200,7 +200,7 @@ def show_timer(sender, app_data, user_data):
 
     play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
-    with dpg.window(label="Timer", tag=window_tag, width=430, height=570, no_title_bar=False, no_move=True, on_close=lambda: (dpg.show_item(previous_window), play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag))):
+    with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True, on_close=lambda: (dpg.show_item(previous_window), play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag))):
         dpg.add_text("00:00:00.000", tag=timer_display_tag)
         dpg.add_spacer(height=10)
 

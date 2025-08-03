@@ -79,7 +79,7 @@ def _create_homeUI():
         dpg.add_static_texture(width, height, data, tag="background_texture")
 
     with dpg.window(tag="background_window", no_title_bar=True, no_move=True, no_resize=True, no_scrollbar=True,
-                    no_collapse=True, no_close=True, pos=(-8, -8), width=450, height=600):
+                    no_collapse=True, no_close=True, pos=(-8, -8), width=453, height=600):
         dpg.add_image("background_texture", tag="background_image")
 
     with dpg.window(label="Your Gear", tag="home_ui_parent_window", width=450, height=600, no_move=True, no_resize=True):
@@ -147,7 +147,7 @@ def _create_homeUI():
                         View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
 
 # -----------------------------------------------------------------------------------------
-dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=440, height=600, resizable=False)
+dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)
 _create_homeUI()
 dpg.set_viewport_small_icon("assets/images/CompanyLogo.ico")
 dpg.set_viewport_large_icon("assets/images/CompanyLogo.ico")
