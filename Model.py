@@ -1,9 +1,12 @@
 import json
 import os
-import dearpygui as dpg
+from dearpygui import dearpygui as dpg
 import json
 import os
 import Control
+
+dpg.create_context()
+
 
 def save_deployment_gear(gear_name, filename="deployment_gear.json"):
     """Saves a gear name to a JSON list if it doesn't already exist."""
@@ -149,7 +152,7 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
         Control._check_window_exists(popup_tag)
 
         with dpg.window(label="Error", modal=True, tag=popup_tag, width=300, height=120, no_resize=True, pos=(200, 200)):
-            dpg.add_text(f"'{key_name}' not found in file.")
+            dpg.add_text("No data to graph")
             dpg.add_spacing(count=2)
             dpg.add_button(label="OK", width=75, callback=lambda: Control._delete_window(popup_tag))
 
@@ -159,8 +162,8 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
     result = []
 
     for t in time_list:
-        if isinstance(t, str) and t.strip().lower() == "botched":
-            result.append({"original": t, "milliseconds": "botched"})
+        if isinstance(t, str) and t.strip().lower() == "eightysix":
+            result.append({"original": t, "milliseconds": "EightySix"})
         else:
             try:
                 ms = time_to_milliseconds(t)
