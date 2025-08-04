@@ -42,7 +42,7 @@ def start(sender, app_data, user_data):
 
         with dpg.group(horizontal=True):
                 dpg.add_spacer(width=padding)
-                dpg.add_button(label="Performance Tracking",tag="performance_tracking_button", callback=View_GearUI_TrainingOptions_Track.show_training_graph, width=button_width, height=100, user_data=gear)
+                dpg.add_button(label="Graph",tag="performance_tracking_button", callback=View_GearUI_TrainingOptions_Track.show_training_graph, width=button_width, height=100, user_data=gear)
                 dpg.bind_item_theme("performance_tracking_button", red_button_theme)           
         with dpg.group(horizontal=True):
                 dpg.add_spacer(width=padding)

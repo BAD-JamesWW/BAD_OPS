@@ -140,7 +140,7 @@ def _create_homeUI():
                     dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (0, 0, 0, 0))
 
             # === Middle Pane ===
-            with dpg.child_window(width=390, height=400, border=False, tag="tag_middle_pane"):
+            with dpg.child_window(width=370, height=400, border=False, tag="tag_middle_pane"):
                 dpg.bind_item_theme("tag_middle_pane", middle_theme)
 
                 with dpg.group(horizontal=True):
@@ -157,15 +157,15 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
-                    plus_btn = dpg.add_button(label="+", callback=_show_input_field,
+                    plus_btn = dpg.add_button(label="Add", callback=_show_input_field,
                                               user_data=[button_container,"add"])
                     dpg.bind_item_theme(plus_btn, red_button_theme)
 
-                    minus_btn = dpg.add_button(label="-", callback=_show_input_field,
+                    minus_btn = dpg.add_button(label="Remove", callback=_show_input_field,
                                                user_data=[button_container,"remove"])
                     dpg.bind_item_theme(minus_btn, red_button_theme)
 
-                    exclaim_btn = dpg.add_button(label="!", callback=Control._nuke_gear)
+                    exclaim_btn = dpg.add_button(label="Nuke", callback=Control._nuke_gear)
                     dpg.bind_item_theme(exclaim_btn, red_button_theme)
 
                 savedGear = Model.load_deployment_gear()
