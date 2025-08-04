@@ -3,6 +3,7 @@ import os
 import dearpygui as dpg
 import json
 import os
+import Control
 
 def save_deployment_gear(gear_name, filename="deployment_gear.json"):
     """Saves a gear name to a JSON list if it doesn't already exist."""
@@ -145,13 +146,12 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
     if key_name not in data:
         popup_tag = "not_found_popup"
 
-        if dpg.does_item_exist(popup_tag):
-            dpg.delete_item(popup_tag)
+        Control._check_window_exists(popup_tag)
 
         with dpg.window(label="Error", modal=True, tag=popup_tag, width=300, height=120, no_resize=True, pos=(200, 200)):
             dpg.add_text(f"'{key_name}' not found in file.")
             dpg.add_spacing(count=2)
-            dpg.add_button(label="OK", width=75, callback=lambda: dpg.delete_item(popup_tag))
+            dpg.add_button(label="OK", width=75, callback=lambda: Control._delete_window(popup_tag))
 
         return []
 

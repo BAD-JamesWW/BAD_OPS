@@ -1,7 +1,6 @@
 import dearpygui.dearpygui as dpg
 import Model
-import pygame
-import os
+import Control
 
 def time_to_milliseconds(time_str):
     if time_str.count(":") != 2 or "." not in time_str:
@@ -38,7 +37,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     if len(training_data) == 0:
         return
 
-    play_sound("assets/audio/ui_sound_02.wav", wait=False)
+    Control.play_sound("assets/audio/ui_sound_02.wav", wait=False)
 
     line_segments = []
     current_x, current_y = [], []
@@ -87,17 +86,14 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     scatter_tag = "training_graph_scatter"
     botched_tag = "botched_scatter"
 
-    if dpg.does_item_exist(graph_window_tag):
-        dpg.delete_item(graph_window_tag)
+    Control._check_window_exists(graph_window_tag)
 
-    with dpg.window(tag=graph_window_tag, width=445, height=570, no_move=True, no_resize=True, no_collapse=True, pos=(0, 0), on_close=lambda: play_sound("assets/audio/ui_sound_05.wav", wait=False)):
+    with dpg.window(tag=graph_window_tag, width=445, height=570, no_move=True, no_resize=True, no_collapse=True, pos=(0, 0), on_close=lambda: Control.play_sound("assets/audio/ui_sound_05.wav", wait=False)):
         dpg.add_text(f"Training Session Scores for {gear}")
 
         # === Parent Window Theme ===
         with dpg.theme() as parent_theme:
             with dpg.theme_component(dpg.mvWindowAppItem):
-                # Transparent window background
-                #dpg.add_theme_color(dpg.mvThemeCol_WindowBg, (0, 0, 0, 50))
                 # Title bar background (normal and active)
                 dpg.add_theme_color(dpg.mvThemeCol_TitleBg, (0, 0, 0, 250))
                 dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (0, 0, 0, 250))
@@ -165,17 +161,3 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
             clamped=True,
             tag=tag
         )
-
-def play_sound(filename, wait=True):
-    path = os.path.abspath(filename)
-    if not os.path.isfile(path) or os.path.getsize(path) == 0:
-        print(f"[Sound Error] File missing or empty: {path}")
-        return
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play()
-        if wait:
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(30)
-    except Exception as e:
-        print("Audio playback failed:", e)

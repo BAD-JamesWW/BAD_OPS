@@ -6,8 +6,7 @@ import json
 from vosk import Model as VoskModel, KaldiRecognizer
 import pyaudio
 import Model
-import pygame
-import os
+import Control
 import ctypes
 
 # Global state
@@ -22,21 +21,6 @@ timer_display_tag = "timer_display"
 
 # Load voice model and audio
 vosk_model = VoskModel("vosk-model-small-en-us-0.15")
-pygame.mixer.init()
-
-def play_sound(filename, wait=True):
-    path = os.path.abspath(filename)
-    if not os.path.isfile(path) or os.path.getsize(path) == 0:
-        print(f"[Sound Error] File missing or empty: {path}")
-        return
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play()
-        if wait:
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(30)
-    except Exception as e:
-        print("Audio playback failed:", e)
 
 def update_timer():
     global elapsed_time
@@ -120,13 +104,13 @@ def listen_for_commands():
 
     while current_round < repetitions:
         print(f"[ROUND {current_round+1}/{repetitions}] Say 'ready' to begin...")
-        play_sound("assets/audio/ready.wav")
+        Control.play_sound("assets/audio/ready.wav")
 
         while True:
             data = stream.read(1024, exception_on_overflow=False)
             if recognizer.AcceptWaveform(data):
                 if json.loads(recognizer.Result()).get("text") == "ready":
-                    play_sound("assets/audio/tenfour.wav")
+                    Control.play_sound("assets/audio/tenfour.wav")
                     break
 
         delay = random.randint(1, 20)
@@ -134,7 +118,7 @@ def listen_for_commands():
                 
         #So timer can make sound every second
         for i in range(delay):
-            play_sound("assets/audio/ui_sound_04.wav", wait=False)
+            Control.play_sound("assets/audio/ui_sound_04.wav", wait=False)
             time.sleep(1)
             i += 1
             #So timer can be stopped during countdown.
@@ -148,7 +132,7 @@ def listen_for_commands():
                 
         
         reset_timer()
-        play_sound("assets/audio/deploy.wav", wait=False)
+        Control.play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()
 
         recognizer.Reset()
@@ -161,11 +145,11 @@ def listen_for_commands():
             if speech.endswith("stop") or speech == "stop":
                 stop_timer_internal()
                 current_round += 1
-                play_sound("assets/audio/heard.wav")
+                Control.play_sound("assets/audio/heard.wav")
                 break
             elif speech.endswith("botch") or speech == "botch":
                 stop_timer_internal(botched=True)
-                play_sound("assets/audio/heard.wav")
+                Control.play_sound("assets/audio/heard.wav")
                 break
 
     stream.stop_stream()
@@ -173,7 +157,7 @@ def listen_for_commands():
     mic.terminate()
 
     print("All repetitions completed.")
-    play_sound("assets/audio/training_complete.wav")
+    Control.play_sound("assets/audio/training_complete.wav")
     session_active = False
     enable_ui_controls()
 
@@ -193,14 +177,13 @@ def show_timer(sender, app_data, user_data):
     previous_window = user_data[1]
     window_tag = "tag_timer"
 
-    if dpg.does_item_exist(window_tag):
-        dpg.delete_item(window_tag)
+    Control._check_window_exists(window_tag)
     
     dpg.hide_item(previous_window)
 
-    play_sound("assets/audio/ui_sound_01.wav", wait=False)
+    Control.play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
-    with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True, on_close=lambda: (dpg.show_item(previous_window), play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag))):
+    with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True, on_close=lambda: (Control._show_window(previous_window), Control.play_sound("assets/audio/ui_sound_05.wav", wait=False), Control._delete_window(window_tag))):
         dpg.add_text("00:00:00.000", tag=timer_display_tag)
         dpg.add_spacer(height=10)
 

@@ -1,13 +1,58 @@
 # Description: Responsible for the Home UI as a whole.
 from dearpygui import dearpygui as dpg
-import View_HomeUI_Gear
 import Model
-import pygame
-import os
+import Control
+
 
 dpg.create_context()
 
 inputInProgress = False
+NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
+NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
+ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
+ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
+
+
+def _popup_remove_gear_failed(isInputEmpty):
+    if dpg.does_item_exist(NON_EXISTENT_GEAR_WINDOW_TAG):
+        dpg.delete_item(NON_EXISTENT_GEAR_WINDOW_TAG)
+    if dpg.does_item_exist(NON_EXISTENT_GEAR_HANDLER_TAG):
+        dpg.delete_item(NON_EXISTENT_GEAR_HANDLER_TAG)
+
+    msg = "Please enter valid input" if isInputEmpty else "Gear Doesn't exist"
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=NON_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(NON_EXISTENT_GEAR_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=NON_EXISTENT_GEAR_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(NON_EXISTENT_GEAR_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(NON_EXISTENT_GEAR_WINDOW_TAG, NON_EXISTENT_GEAR_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_add_gear_failed(isInputEmpty):
+    if dpg.does_item_exist(ALREADY_EXISTENT_GEAR_WINDOW_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_GEAR_WINDOW_TAG)
+    if dpg.does_item_exist(ALREADY_EXISTENT_GEAR_HANDLER_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_GEAR_HANDLER_TAG)
+
+    msg = "Enter a valid gear name" if isInputEmpty else "Gear Already Exists"
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=ALREADY_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(ALREADY_EXISTENT_GEAR_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=ALREADY_EXISTENT_GEAR_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(ALREADY_EXISTENT_GEAR_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(ALREADY_EXISTENT_GEAR_WINDOW_TAG, ALREADY_EXISTENT_GEAR_HANDLER_TAG)
+    except Exception:
+        pass
+
 
 def _show_input_field(sender, app_data, user_data):
     global inputInProgress
@@ -21,8 +66,7 @@ def _show_input_field(sender, app_data, user_data):
     input_tag = f"gear_input_field_{fieldType}"
 
     # Remove old input field if it exists
-    if dpg.does_item_exist(input_tag):
-        dpg.delete_item(input_tag)
+    Control._check_window_exists(input_tag)
 
     # Get all children of the parent
     children = dpg.get_item_children(button_container, 1)  # slot 1 = item slot for child items
@@ -32,43 +76,28 @@ def _show_input_field(sender, app_data, user_data):
 
     # Create the input field with proper callback and data
     if fieldType == "add":
-        play_sound("assets/audio/ui_sound_03.wav", wait=False)
+        Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
             label="Enter gear name:",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=View_HomeUI_Gear._add_gear,
+            callback=Control._add_gear,
             user_data=[button_container, input_tag, "home_ui_parent_window"]
         )
 
     elif fieldType == "remove":
-        play_sound("assets/audio/ui_sound_03.wav", wait=False)
+        Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
             label="Enter gear name:",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=View_HomeUI_Gear._remove_gear,
+            callback=Control._remove_gear,
             user_data=[button_container, input_tag]
         )
-
-
-def play_sound(filename, wait=True):
-    path = os.path.abspath(filename)
-    if not os.path.isfile(path) or os.path.getsize(path) == 0:
-        print(f"[Sound Error] File missing or empty: {path}")
-        return
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play()
-        if wait:
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(30)
-    except Exception as e:
-        print("Audio playback failed:", e)
 
 
 # -----------------------------------------------------------------------------------------
@@ -136,7 +165,7 @@ def _create_homeUI():
                                                user_data=[button_container,"remove"])
                     dpg.bind_item_theme(minus_btn, red_button_theme)
 
-                    exclaim_btn = dpg.add_button(label="!", callback=View_HomeUI_Gear._nuke_gear)
+                    exclaim_btn = dpg.add_button(label="!", callback=Control._nuke_gear)
                     dpg.bind_item_theme(exclaim_btn, red_button_theme)
 
                 savedGear = Model.load_deployment_gear()
@@ -144,7 +173,7 @@ def _create_homeUI():
                     for gearName in savedGear:
                         gear_input_tag = dpg.generate_uuid()
                         dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
-                        View_HomeUI_Gear._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
+                        Control._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
 
 # -----------------------------------------------------------------------------------------
 dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)

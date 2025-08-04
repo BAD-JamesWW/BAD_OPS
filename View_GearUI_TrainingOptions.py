@@ -1,26 +1,24 @@
 import dearpygui.dearpygui as dpg
 import View_GearUI_TrainingOptions_Train
 import View_GearUI_TrainingOptions_Track
-import pygame
-import os
+import Control
 
 
 def start(sender, app_data, user_data):
     gear = user_data[0]
-    previous_window = user_data[1]
+    previous_window_tag = user_data[1]
     window_tag = f"{gear}_window"
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
 
-    if dpg.does_item_exist(window_tag):
-        dpg.delete_item(window_tag)
+    Control._check_window_exists(window_tag)
 
-    dpg.hide_item(previous_window)
-    play_sound("assets/audio/ui_sound_01.wav", wait=False)
+    Control._hide_window(previous_window_tag)
+    Control.play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
     with dpg.window(label=f" Training Options For {gear}", tag=window_tag, width=445, height=570,
-                    on_close=lambda: (dpg.show_item(previous_window), play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag)), no_move=True):
+                    on_close=lambda: (Control._show_window(previous_window_tag), Control.play_sound("assets/audio/ui_sound_05.wav", wait=False), dpg.delete_item(window_tag)), no_move=True):
         dpg.add_text("What would you like to do?")
 
         # === Parent Window Theme ===
@@ -50,18 +48,3 @@ def start(sender, app_data, user_data):
                 dpg.add_spacer(width=padding)
                 dpg.add_button(label="Train",tag = "train_button", callback=View_GearUI_TrainingOptions_Train.show_timer, width=button_width, height=100, user_data=[gear,window_tag])
                 dpg.bind_item_theme("train_button", red_button_theme)
-
-
-def play_sound(filename, wait=True):
-    path = os.path.abspath(filename)
-    if not os.path.isfile(path) or os.path.getsize(path) == 0:
-        print(f"[Sound Error] File missing or empty: {path}")
-        return
-    try:
-        pygame.mixer.music.load(path)
-        pygame.mixer.music.play()
-        if wait:
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(30)
-    except Exception as e:
-        print("Audio playback failed:", e)
