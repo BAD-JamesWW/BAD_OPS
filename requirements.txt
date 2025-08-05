@@ -1,0 +1,4 @@
+dearpygui
+pygame
+pyaudio
+vosk
