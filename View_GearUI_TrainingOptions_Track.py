@@ -127,7 +127,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
             dpg.add_scatter_series(scatter_x, scatter_y, label="Time", tag=scatter_tag, parent=y_axis_tag)
 
             if botched_x:
-                dpg.add_scatter_series(botched_x, botched_y, label="EightySix", tag=botched_tag, parent=y_axis_tag)
+                dpg.add_scatter_series(botched_x, botched_y, label="Eighty-Six", tag=botched_tag, parent=y_axis_tag)
 
         # Below the plot
         with dpg.group(horizontal=True):

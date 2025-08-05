@@ -54,7 +54,6 @@ def save_deployment_gear_time(time, gear_name, filename="deployment_scores.json"
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
 
-    print(f"Score {time} saved for: {gear_name}")
 
 
 def load_deployment_gear(filename="deployment_gear.json"):
