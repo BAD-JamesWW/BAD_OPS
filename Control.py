@@ -1,3 +1,11 @@
+# © 2025 B.A.D. Black Apex Development LLC
+# All rights reserved.
+# This software and its associated name, logo, and branding are the intellectual property of
+# B.A.D. Black Apex Development LLC — registered in the State of Ohio (Entity #5448030).
+# Unauthorized use, reproduction, or distribution is prohibited and may violate
+# copyright, trademark, and unfair competition laws.
+
+
 #Description: Responsible for controlling the flow of the program.
 import View_HomeUI
 import View_GearUI_TrainingOptions
