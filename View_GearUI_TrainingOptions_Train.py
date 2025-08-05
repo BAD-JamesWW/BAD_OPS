@@ -60,7 +60,6 @@ def stop_training_early():
     timer_running = False
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
-    print("[Notice] Training stopped early (no log).")
     session_active = False
     enable_ui_controls()
 
@@ -103,18 +102,20 @@ def listen_for_commands():
     recognizer = KaldiRecognizer(vosk_model, 16000)
 
     while current_round < repetitions:
-        print(f"[ROUND {current_round+1}/{repetitions}] Say 'ready' to begin...")
-        Control.play_sound("assets/audio/ready.wav")
+        
+        #Cleaning to prevent next recog. misinterpretation.
+        recognizer.Reset()
+
+        Control.play_sound("assets/audio/ready.wav", True)
 
         while True:
             data = stream.read(1024, exception_on_overflow=False)
             if recognizer.AcceptWaveform(data):
                 if json.loads(recognizer.Result()).get("text") == "ready":
-                    Control.play_sound("assets/audio/tenfour.wav")
+                    Control.play_sound("assets/audio/tenfour.wav",True)
                     break
 
         delay = random.randint(1, 20)
-        print(f"Starting timer in {delay} seconds...")
                 
         #So timer can make sound every second
         for i in range(delay):
@@ -123,8 +124,7 @@ def listen_for_commands():
             i += 1
             #So timer can be stopped during countdown.
             if session_active == False:
-                reset_timer()
-                recognizer.Reset()
+                reset_timer()                
                 stream.stop_stream()
                 stream.close()
                 mic.terminate()
@@ -134,9 +134,10 @@ def listen_for_commands():
         reset_timer()
         Control.play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()
-
+        
+        #Cleaning to prevent next recog. misinterpretation.
         recognizer.Reset()
-        print("Say 'stop' to stop the timer.")
+
         while True:
             data = stream.read(1024, exception_on_overflow=False)
             if recognizer.AcceptWaveform(data):
@@ -156,7 +157,6 @@ def listen_for_commands():
     stream.close()
     mic.terminate()
 
-    print("All repetitions completed.")
     Control.play_sound("assets/audio/training_complete.wav")
     session_active = False
     enable_ui_controls()
