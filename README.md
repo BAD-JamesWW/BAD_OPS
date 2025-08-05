@@ -19,6 +19,14 @@ Its primary goal is to allow users to train deployment times with any piece of g
 
 ---
 
+## Acknowledgements
+This project uses:
+- [Dear PyGui](https://github.com/hoffstadt/DearPyGui) — Licensed under the MIT License
+- [Vosk Speech Recognition Toolkit](https://alphacephei.com/vosk/) — Licensed under the Apache License 2.0
+- [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) — Licensed under the MIT License
+
+---
+
 ## **Features**
 - Add, remove, or clear all gear entries
 - Train with voice‑controlled timing and logging
