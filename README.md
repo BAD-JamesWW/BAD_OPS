@@ -38,6 +38,12 @@ This project uses:
 
 ## **How to Use**
 
+### **Installation & Execution**
+**Supported Systems**: Windows 11
+- **Run the update.bat**: Open a terminal in the O.P.S. main directory and run the "update.bat" file.
+- **Run the run.bat**: Open a terminal in the O.P.S. main directory and run the "run.bat" file.
+- Now unless an update happens, you can just run "run.bat" to execute O.P.S.
+
 ### **Home Screen**
 - **Add**: Add a gear entry to the list.
 - **Remove**: Remove a selected gear entry.
