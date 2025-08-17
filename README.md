@@ -17,6 +17,8 @@ Unauthorized reproduction, modification, distribution, or use of this project, i
 **O.P.S.** is a modular, real‑time training tool designed to enhance deployment efficiency for individuals and small teams.  
 Its primary goal is to allow users to train deployment times with any piece of gear where speed is paramount. Logged sessions allow you to track deployment speeds over time and view your current average speed via an integrated graph.
 
+**Patent Pending – U.S. Provisional Application No. 63/865,359**
+
 ---
 
 ## Acknowledgements
