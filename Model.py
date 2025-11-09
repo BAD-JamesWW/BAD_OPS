@@ -21,7 +21,7 @@ def save_deployment_gear(gear_name, filename="deployment_gear.json"):
 
     gear_name = gear_name.strip()
 
-    # Step 1: Load existing data or create new list
+    #Load existing data and verify it's a list.
     if os.path.exists(filename):
         try:
             with open(filename, 'r') as f:
@@ -32,33 +32,41 @@ def save_deployment_gear(gear_name, filename="deployment_gear.json"):
         except json.JSONDecodeError:
             print(f"[Error] Failed to decode JSON in {filename}.")
             return
+    #Create new list data
     else:
         data = []
 
-    # Step 2: Check for existence
+    #Saves new gear if it doesn't already exist.
     if gear_name not in data:
         data.append(gear_name)
-
-        # Step 3: Save updated list back to file
         with open(filename, 'w') as f:
             json.dump(data, f, indent=4)
 
 
 def save_deployment_gear_time(time, gear_name, filename="deployment_scores.json"):
-    # Step 1: Load existing data (or create empty structure if file doesn't exist)
+    # Load existing data and verify it's a dict.
     if os.path.exists(filename):
-        with open(filename, "r") as f:
-            data = json.load(f)
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                print(f"[Error] Data in {filename} is not a dict.")
+                return
+        except json.JSONDecodeError:
+            print(f"[Error] Failed to decode JSON in {filename}.")
+            return
+    #the scores file will be a dict of lists, so times can be easily attached to gear
     else:
         data = {}
 
-    # Step 2: Append to the list for the given gear_name
+    #In case the scores file doesn't have the gear in its dict
     if gear_name not in data:
         data[gear_name] = []
 
+    #Append new list data, to the dict key of gear_name
     data[gear_name].append(time)
 
-    # Step 3: Write the updated data back to file
+    #Update file data
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -82,22 +90,29 @@ def load_deployment_gear(filename="deployment_gear.json"):
 
 
 def delete_deployment_gear_time(gear_name, filename="deployment_scores.json"):
-    # Step 1: Check if the file exists
+    #Check if the file exists
     if not os.path.exists(filename):
         print("No data file found.")
         return
 
-    # Step 2: Load the existing data
-    with open(filename, "r") as f:
-        data = json.load(f)
+    #Load the existing data file
+    try:
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            print(f"[Error] Data in {filename} is not a dict.")
+            return
+    except json.JSONDecodeError:
+        print(f"[Error] Failed to decode JSON in {filename}.")
+        return
 
-    # Step 3: Check if gear_name exists
+    #Delete chosen gear in data file
     if gear_name in data:
         del data[gear_name]
     else:
         return
 
-    # Step 4: Save updated data back to file
+    #Update data file
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
 
@@ -135,6 +150,7 @@ def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
 
 
 def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.json") -> list:
+    #Nested func. to convert time to ms.
     def time_to_milliseconds(time_str):
         hours, minutes, rest = time_str.split(':')
         seconds, millis = rest.split('.')
@@ -146,6 +162,7 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
         )
         return total_millis
 
+    #Attempt to load data file & return empty list of fail.
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
@@ -153,6 +170,7 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
         print(f"Error loading JSON: {e}")
         return []
 
+    #Display popups and return empty list if corresponding gear time doesn't exist
     if key_name not in data:
         popup_tag = "not_found_popup"
 
@@ -165,9 +183,9 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
 
         return []
 
+    # Format a list of times for corresponding gear and return it
     time_list = data[key_name]
     result = []
-
     for t in time_list:
         if isinstance(t, str) and t.strip().lower() == "eightysix":
             result.append({"original": t, "milliseconds": "EightySix"})

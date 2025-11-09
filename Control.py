@@ -25,6 +25,7 @@ def main():
 if __name__ == "__main__":
     main()
 
+#Plays a sound file
 def play_sound(filename, wait=True):
     path = os.path.abspath(filename)
     if not os.path.isfile(path) or os.path.getsize(path) == 0:
@@ -52,6 +53,7 @@ def _check_window_exists(window_tag):
     if dpg.does_item_exist(window_tag):
         dpg.delete_item(window_tag)
 
+#Adds new gear
 def _add_gear(sender, app_data, user_data):
     button_container = user_data[0]
     input_tag = user_data[1]
@@ -88,6 +90,7 @@ def _add_gear(sender, app_data, user_data):
     else:
         dpg.show_item(input_tag)
 
+#Removes specific named gear
 def _remove_gear(sender, app_data, user_data):
     View_HomeUI.inputInProgress = False
     input_tag = user_data[1]
@@ -106,6 +109,7 @@ def _remove_gear(sender, app_data, user_data):
     else:
         dpg.show_item(input_tag)
 
+#Removes all listed gear
 def _nuke_gear(sender, app_data, user_data):
     if dpg.does_item_exist("nuke_confirm_window"):
         dpg.delete_item("nuke_confirm_window")
