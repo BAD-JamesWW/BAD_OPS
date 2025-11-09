@@ -80,6 +80,38 @@ def load_deployment_gear(filename="deployment_gear.json"):
         print(f"[Error] Failed to decode JSON in: {filename}")
         return None
 
+def create_user_data_files(username="" , password=""):
+
+    #TODO Use bycrypt for password file, this file will only contain username keys and a password attached to said key
+    #todo after said file is created successfully then create a usual json file for the deployment_gear.json with corresponding username appended.
+
+    filename = f"{username}_deployment_gear.json"
+
+    if not os.path.exists(filename):
+        return
+    data_type = []
+
+    with open(filename, 'w') as f:
+        json.dump(data_type, f, indent=4)
+
+    #todo need to save user+password to an accounts file
+    accounts_file = "account_database"
+
+    if os.path.exists("accounts_file"):
+        with open(accounts_file, "r") as f:
+            data = json.load(f)
+    else:
+        data = {}
+
+    if username not in data:
+        data[username] = []
+
+    data[username].append(password)
+
+    # Step 3: Write the updated data back to file
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
+
 
 def delete_deployment_gear_time(gear_name, filename="deployment_scores.json"):
     # Step 1: Check if the file exists

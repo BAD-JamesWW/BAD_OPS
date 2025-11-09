@@ -71,6 +71,13 @@ def _show_input_field(sender, app_data, user_data):
     
     button_container = user_data[0]
     fieldType = user_data[1]
+
+    #To allow extra situational data to be passed through a call
+    try:
+        extra_data_slot_01 = user_data[2]
+    except IndexError:
+        extra_data_slot_01 = None
+
     input_tag = f"gear_input_field_{fieldType}"
 
     # Remove old input field if it exists
@@ -106,6 +113,49 @@ def _show_input_field(sender, app_data, user_data):
             callback=Control._remove_gear,
             user_data=[button_container, input_tag]
         )
+
+    elif fieldType == "account_create":
+        username_tag = "create_username"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter username:",
+            tag=username_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            dpg.hide_item(username_tag),
+            _show_input_field(s, a, [button_container, "password_create", username_tag]))
+        )
+
+    elif fieldType == "password_create":
+        if extra_data_slot_01 is None:
+            return
+        password_tag = "create_password"
+        username_tag = extra_data_slot_01
+
+        # Password input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter password (Spaces Are Ignored):",
+            tag=password_tag,
+            before=before_tag,
+            password=True,  # Mask input
+            on_enter=True,  # Hitting Enter here triggers callback
+            callback=Control._create_user_data,
+            user_data=[button_container, username_tag.strip(), password_tag.replace(" ",""), "home_ui_parent_window"]
+        )
+
+    elif fieldType == "account_load":
+        pass
+    #todo have control save username so i can then do password and only then should a load attempt be made on usualFileName with username appended that filename
+    #todo if there is a user in the database that has that password attached to them
+    #todo if the file doesnt exist popup will activate and this user doesn't exist
+    #todo Order of operations for account functionallity is, Create-Save-Load
+    #todo will need to be able to create a new user with current gear data and time data in case user doesnt make acc first
+    #todo make sure no 2 username can be the same
 
 
 # -----------------------------------------------------------------------------------------
@@ -165,6 +215,10 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
+                    create_account_btn = dpg.add_button(label="Create Acc.", callback=_show_input_field,
+                                              user_data=[button_container, "account_create"])
+                    dpg.bind_item_theme(create_account_btn, red_button_theme)
+
                     plus_btn = dpg.add_button(label="Add", callback=_show_input_field,
                                               user_data=[button_container,"add"])
                     dpg.bind_item_theme(plus_btn, red_button_theme)
