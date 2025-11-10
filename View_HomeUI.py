@@ -145,7 +145,7 @@ def _show_input_field(sender, app_data, user_data):
             password=True,  # Mask input
             on_enter=True,  # Hitting Enter here triggers callback
             callback=Control._create_user_data,
-            user_data=[button_container, username_tag.strip(), password_tag.replace(" ",""), "home_ui_parent_window"]
+            user_data=[button_container, username_tag, password_tag, "home_ui_parent_window"]
         )
 
     elif fieldType == "account_load":

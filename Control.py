@@ -134,6 +134,6 @@ def _load_user_data(sender, app_data, user_data):
     return
 
 def _create_user_data(sender, app_data, user_data):
-    new_user_name = user_data[1]
-    new_user_password = user_data[2]
+    new_user_name = dpg.get_value(user_data[1])
+    new_user_password = dpg.get_value(user_data[2])
     Model.create_user_data_files(username=new_user_name, password=new_user_password)

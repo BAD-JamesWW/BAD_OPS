@@ -9,6 +9,7 @@
 import json
 import os
 from dearpygui import dearpygui as dpg
+import bcrypt
 import json
 import os
 import Control
@@ -80,40 +81,60 @@ def load_deployment_gear(filename="deployment_gear.json"):
         print(f"[Error] Failed to decode JSON in: {filename}")
         return None
 
-def create_user_data_files(username="" , password=""):
+def create_user_data_files(username: str, password: str):
 
     #TODO Use bycrypt for password file, this file will only contain username keys and a password attached to said key
-    #todo after said file is created successfully then create a usual json file for the deployment_gear.json with corresponding username appended.
-
-    filename = f"{username}_deployment_gear.json"
-
-    if not os.path.exists(filename):
-        return
-    data_type = []
-
-    with open(filename, 'w') as f:
-        json.dump(data_type, f, indent=4)
-
-    #todo need to save user+password to an accounts file
     accounts_file = "account_database"
-
-    if os.path.exists("accounts_file"):
+    if os.path.exists(accounts_file):
         with open(accounts_file, "r") as f:
-            data = json.load(f)
+            data_for_accounts = json.load(f)
     else:
-        data = {}
+        data_for_accounts = {}
 
-    if username not in data:
-        data[username] = []
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+    hashed_username = bcrypt.hashpw(username.encode("utf-8"), salt)
 
-    data[username].append(password)
+    #todo check if acc and pass already exist if so return with a value and have control call a popup from view
 
-    # Step 3: Write the updated data back to file
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
+    if hashed_username.decode("utf-8") not in data_for_accounts:
+        data_for_accounts[hashed_username.decode("utf-8")] = []
+
+    data_for_accounts[hashed_username.decode("utf-8")].append(hashed_password.decode("utf-8"))
+    with open(accounts_file, "w") as f:
+        json.dump(data_for_accounts, f, indent=4)
 
 
-def delete_deployment_gear_time(gear_name, filename="deployment_scores.json"):
+    #Create file for the username_deployment_gear.json with corresponding username appended.
+
+    deployment_gear_file = f"{username}_deployment_gear.json"
+
+    if os.path.exists(deployment_gear_file):
+        with open(deployment_gear_file, "r") as f:
+            data_for_deployment_gear = json.load(f)
+    else:
+        data_for_deployment_gear = []
+
+    with open(deployment_gear_file, 'w') as f:
+        json.dump(data_for_deployment_gear, f, indent=4)
+
+    #Create file for the username_deployment_gear_times.json with corresponding username appended.
+    deployment_gear_times_file = f"{username}_deployment_gear_times.json"
+
+    if os.path.exists(deployment_gear_times_file):
+        with open(deployment_gear_times_file, "r") as f:
+            data_for_deployment_gear_times = json.load(f)
+    else:
+        data_for_deployment_gear_times = {}
+
+    with open(deployment_gear_times_file, 'w') as f:
+        json.dump(data_for_deployment_gear_times, f, indent=4)
+
+    #todo refactor code to accomdate for new file names
+
+
+
+def delete_deployment_gear_time(gear_name, filename="deployment_times.json"):
     # Step 1: Check if the file exists
     if not os.path.exists(filename):
         print("No data file found.")
@@ -166,7 +187,7 @@ def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
         print(f"[Warning] Gear '{gear_name}' not found in file.")
 
 
-def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.json") -> list:
+def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_times.json") -> list:
     def time_to_milliseconds(time_str):
         hours, minutes, rest = time_str.split(':')
         seconds, millis = rest.split('.')
