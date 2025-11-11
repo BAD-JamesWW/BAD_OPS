@@ -10,6 +10,7 @@ import json
 import os
 from dearpygui import dearpygui as dpg
 import bcrypt
+import hashlib
 import json
 import os
 import Control
@@ -81,52 +82,55 @@ def load_deployment_gear(filename="deployment_gear.json"):
         print(f"[Error] Failed to decode JSON in: {filename}")
         return None
 
-def create_user_data_files(username: str, password: str):
+def create_user_data_files(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    password = dpg.get_value(user_data[2])
+    account_database_file = "account_database"
 
-    #TODO Use bycrypt for password file, this file will only contain username keys and a password attached to said key
-    accounts_file = "account_database"
-    if os.path.exists(accounts_file):
-        with open(accounts_file, "r") as f:
+    #Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
             data_for_accounts = json.load(f)
     else:
         data_for_accounts = {}
 
+    #Hash user data
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
-    hashed_username = bcrypt.hashpw(username.encode("utf-8"), salt)
+    hashed_and_salted_password = bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
 
-    #todo check if acc and pass already exist if so return with a value and have control call a popup from view
+    #Checks if username already exists.
+    if hashed_username in data_for_accounts:
+        return "Already exists"
 
-    if hashed_username.decode("utf-8") not in data_for_accounts:
-        data_for_accounts[hashed_username.decode("utf-8")] = []
+    #Create user
+    data_for_accounts[hashed_username] = []
 
-    data_for_accounts[hashed_username.decode("utf-8")].append(hashed_password.decode("utf-8"))
-    with open(accounts_file, "w") as f:
+    #Append password to corresponding user
+    data_for_accounts[hashed_username].append(hashed_and_salted_password)
+
+    #Append user to account database file
+    with open(account_database_file, "w") as f:
         json.dump(data_for_accounts, f, indent=4)
 
 
-    #Create file for the username_deployment_gear.json with corresponding username appended.
-
+    #Create file for "username"_deployment_gear
     deployment_gear_file = f"{username}_deployment_gear.json"
-
     if os.path.exists(deployment_gear_file):
         with open(deployment_gear_file, "r") as f:
             data_for_deployment_gear = json.load(f)
     else:
         data_for_deployment_gear = []
-
     with open(deployment_gear_file, 'w') as f:
         json.dump(data_for_deployment_gear, f, indent=4)
 
-    #Create file for the username_deployment_gear_times.json with corresponding username appended.
+    #Create file for "username"_deployment_gear_times
     deployment_gear_times_file = f"{username}_deployment_gear_times.json"
-
     if os.path.exists(deployment_gear_times_file):
         with open(deployment_gear_times_file, "r") as f:
             data_for_deployment_gear_times = json.load(f)
     else:
         data_for_deployment_gear_times = {}
-
     with open(deployment_gear_times_file, 'w') as f:
         json.dump(data_for_deployment_gear_times, f, indent=4)
 

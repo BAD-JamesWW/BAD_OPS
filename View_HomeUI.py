@@ -19,6 +19,8 @@ NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
 NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
 ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
 ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
+ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
+ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
 
 
 def _popup_remove_gear_failed(isInputEmpty):
@@ -58,6 +60,26 @@ def _popup_add_gear_failed(isInputEmpty):
         dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(ALREADY_EXISTENT_GEAR_WINDOW_TAG))
     try:
         dpg.bind_item_handler_registry(ALREADY_EXISTENT_GEAR_WINDOW_TAG, ALREADY_EXISTENT_GEAR_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_create_user_failed(sender, app_data, user_data):
+    if dpg.does_item_exist(ALREADY_EXISTENT_USER_WINDOW_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_USER_WINDOW_TAG)
+    if dpg.does_item_exist(ALREADY_EXISTENT_USER_HANDLER_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_USER_HANDLER_TAG)
+
+    msg = f"User: {dpg.get_value(user_data[1])} already exists"
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=ALREADY_EXISTENT_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(ALREADY_EXISTENT_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=ALREADY_EXISTENT_USER_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(ALREADY_EXISTENT_USER_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(ALREADY_EXISTENT_GEAR_WINDOW_TAG, ALREADY_EXISTENT_USER_HANDLER_TAG)
     except Exception:
         pass
 
@@ -114,7 +136,7 @@ def _show_input_field(sender, app_data, user_data):
             user_data=[button_container, input_tag]
         )
 
-    elif fieldType == "account_create":
+    elif fieldType == "username_create":
         username_tag = "create_username"
 
         # Username input
@@ -126,13 +148,15 @@ def _show_input_field(sender, app_data, user_data):
             on_enter=True,
             callback=lambda s, a, u: (
             globals().__setitem__("inputInProgress", False),
-            dpg.hide_item(username_tag),
-            _show_input_field(s, a, [button_container, "password_create", username_tag]))
+            dpg.hide_item(username_tag), #So user can't break program flow by changing the entered username
+            _show_input_field(s, a, [button_container, "password_create", username_tag]),
+            )
         )
 
     elif fieldType == "password_create":
         if extra_data_slot_01 is None:
             return
+
         password_tag = "create_password"
         username_tag = extra_data_slot_01
 
@@ -144,9 +168,16 @@ def _show_input_field(sender, app_data, user_data):
             before=before_tag,
             password=True,  # Mask input
             on_enter=True,  # Hitting Enter here triggers callback
-            callback=Control._create_user_data,
-            user_data=[button_container, username_tag, password_tag, "home_ui_parent_window"]
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._create_user_data(s, a, [button_container, username_tag, password_tag, "home_ui_parent_window"]),
+
+                # So input fields for username & password are properly deleted
+                Control._check_window_exists(username_tag),
+                Control._check_window_exists(password_tag)
+            )
         )
+
 
     elif fieldType == "account_load":
         pass
@@ -215,8 +246,8 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
-                    create_account_btn = dpg.add_button(label="Create Acc.", callback=_show_input_field,
-                                              user_data=[button_container, "account_create"])
+                    create_account_btn = dpg.add_button(label="+ User", callback=_show_input_field,
+                                              user_data=[button_container, "username_create"])
                     dpg.bind_item_theme(create_account_btn, red_button_theme)
 
                     plus_btn = dpg.add_button(label="Add", callback=_show_input_field,
