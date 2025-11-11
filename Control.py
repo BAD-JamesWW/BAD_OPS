@@ -21,6 +21,7 @@ gears = dict()
 #-----------------------------------------------------------------------------------------
 def main():
     View_HomeUI._create_homeUI()
+    Model._initiate_log_file()
 
 if __name__ == "__main__":
     main()
@@ -146,3 +147,15 @@ def _create_user_data(sender, app_data, user_data):
 
     #So busy popup goes away
     _check_window_exists(View_HomeUI.BUSY_CREATING_USER_WINDOW_TAG)
+
+def _delete_user_data(sender, app_data, user_data):
+
+    #So user knows program is busy
+    View_HomeUI._popup_busy_deleting_user(sender, app_data, user_data)
+
+    result =  Model._delete_user_data_files(sender, app_data, user_data)
+
+    View_HomeUI._popup_delete_user_result(dpg.get_value(user_data[1]), result)
+
+    # So busy popup goes away
+    _check_window_exists(View_HomeUI.BUSY_DELETING_USER_WINDOW_TAG)

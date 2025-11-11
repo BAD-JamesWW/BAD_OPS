@@ -21,7 +21,10 @@ ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
 ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
 ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
 ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
+USER_DELETION_RESULT_WINDOW_TAG = "user_deletion_result_window"
+USER_DELETION_RESULT_HANDLER_TAG = "user_deletion_result_handler"
 BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
+BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
 
 
 def _popup_remove_gear_failed(isInputEmpty):
@@ -95,6 +98,41 @@ def _popup_busy_creating_user(sender, app_data, user_data):
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
         dpg.set_item_pos(BUSY_CREATING_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
 
+def _popup_busy_deleting_user(sender, app_data, user_data):
+    if dpg.does_item_exist(BUSY_DELETING_USER_WINDOW_TAG):
+        dpg.delete_item(BUSY_DELETING_USER_WINDOW_TAG)
+
+    msg = f"Deleting data for User: {dpg.get_value(user_data[1])}..."
+    with dpg.window(label=msg, modal=True, no_collapse=True, no_close=True,
+                    tag=BUSY_DELETING_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(BUSY_DELETING_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+def _popup_delete_user_result(username: str, result: str):
+    if dpg.does_item_exist(USER_DELETION_RESULT_WINDOW_TAG):
+        dpg.delete_item(USER_DELETION_RESULT_WINDOW_TAG)
+    if dpg.does_item_exist(USER_DELETION_RESULT_HANDLER_TAG):
+        dpg.delete_item(USER_DELETION_RESULT_HANDLER_TAG)
+
+    if result == "Does not exist":
+        msg = f"User: {username} doesn't exist"
+    else:
+        msg = f"User: {username} successfully derezzed"
+
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=USER_DELETION_RESULT_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_DELETION_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_DELETION_RESULT_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_DELETION_RESULT_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_DELETION_RESULT_WINDOW_TAG, USER_DELETION_RESULT_HANDLER_TAG)
+    except Exception:
+        pass
+
 
 def _show_input_field(sender, app_data, user_data):
     global inputInProgress
@@ -148,7 +186,7 @@ def _show_input_field(sender, app_data, user_data):
             user_data=[button_container, input_tag]
         )
 
-    elif fieldType == "username_create":
+    elif fieldType == "user_create":
         username_tag = "create_username"
 
         # Username input
@@ -162,6 +200,25 @@ def _show_input_field(sender, app_data, user_data):
             globals().__setitem__("inputInProgress", False),
             dpg.hide_item(username_tag), #So user can't break program flow by changing the entered username
             _show_input_field(s, a, [button_container, "password_create", username_tag]),
+            )
+        )
+
+    elif fieldType == "user_delete":
+        username_to_delete_tag = "username_to_delete"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter username to delete:",
+            tag=username_to_delete_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            Control._delete_user_data(sender, app_data, [button_container, username_to_delete_tag]),
+
+            #So input field is properly deleted after use
+            Control._check_window_exists(username_to_delete_tag)
             )
         )
 
@@ -258,8 +315,11 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
+                    delete_account_btn = dpg.add_button(label="- User", callback=_show_input_field,
+                                                        user_data=[button_container, "user_delete"])
+                    dpg.bind_item_theme(delete_account_btn, red_button_theme)
                     create_account_btn = dpg.add_button(label="+ User", callback=_show_input_field,
-                                              user_data=[button_container, "username_create"])
+                                              user_data=[button_container, "user_create"])
                     dpg.bind_item_theme(create_account_btn, red_button_theme)
 
                     plus_btn = dpg.add_button(label="Add", callback=_show_input_field,

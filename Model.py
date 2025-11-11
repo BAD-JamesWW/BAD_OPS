@@ -11,12 +11,23 @@ import os
 from dearpygui import dearpygui as dpg
 import bcrypt
 import hashlib
+import logging
 import json
 import os
 import Control
 
 dpg.create_context()
 
+#Deletes previuous log file and creates a new one.
+def _initiate_log_file():
+    filename = "app.log"
+    if os.path.exists(filename):
+        os.remove(filename)
+    logging.basicConfig(
+        filename=filename,
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s"
+    )
 
 def save_deployment_gear(gear_name, filename="deployment_gear.json"):
     """Saves a gear name to a JSON list if it doesn't already exist."""
@@ -139,6 +150,37 @@ def create_user_data_files(sender, app_data, user_data):
     #todo need a default file_name.json for gears and times if the user doesnt choose to create an acc before or after new data
 
 
+def _delete_user_data_files(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    account_database_file = "account_database"
+
+    #Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
+            data_for_accounts = json.load(f)
+    else:
+        return "Does not exist" #Because user doesn't exist if account database doesn't exist
+
+    #Hash user data
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
+
+    #Checks if username already exists.
+    if hashed_username in data_for_accounts:
+        del data_for_accounts[hashed_username]
+        with open(account_database_file, "w") as f:
+            json.dump(data_for_accounts, f, indent=4)
+        deployment_gear_file = f"{username}_deployment_gear.json"
+        deployment_gear_times_file = f"{username}_deployment_gear_times.json"
+        try:
+            os.remove(deployment_gear_file)
+        except FileNotFoundError:
+            logging.info(f"deployment gear file for user {username} not found")
+        try:
+            os.remove(deployment_gear_times_file)
+        except FileNotFoundError:
+            logging.info(f"deployment gear times file for user {username} not found")
+    else:
+        return "Does not exist"
 
 def delete_deployment_gear_time(gear_name, filename="deployment_times.json"):
     # Step 1: Check if the file exists
