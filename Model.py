@@ -135,6 +135,8 @@ def create_user_data_files(sender, app_data, user_data):
         json.dump(data_for_deployment_gear_times, f, indent=4)
 
     #todo refactor code to accomdate for new file names
+    #todo username_file_name.json files should be stored in a nested folder so root folder doesn't get messy
+    #todo need a default file_name.json for gears and times if the user doesnt choose to create an acc before or after new data
 
 
 

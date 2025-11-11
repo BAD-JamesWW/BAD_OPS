@@ -21,6 +21,7 @@ ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
 ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
 ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
 ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
+BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
 
 
 def _popup_remove_gear_failed(isInputEmpty):
@@ -79,9 +80,20 @@ def _popup_create_user_failed(sender, app_data, user_data):
     with dpg.item_handler_registry(tag=ALREADY_EXISTENT_USER_HANDLER_TAG):
         dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(ALREADY_EXISTENT_USER_WINDOW_TAG))
     try:
-        dpg.bind_item_handler_registry(ALREADY_EXISTENT_GEAR_WINDOW_TAG, ALREADY_EXISTENT_USER_HANDLER_TAG)
+        dpg.bind_item_handler_registry(ALREADY_EXISTENT_USER_WINDOW_TAG, ALREADY_EXISTENT_USER_HANDLER_TAG)
     except Exception:
         pass
+
+def _popup_busy_creating_user(sender, app_data, user_data):
+    if dpg.does_item_exist(BUSY_CREATING_USER_WINDOW_TAG):
+        dpg.delete_item(BUSY_CREATING_USER_WINDOW_TAG)
+
+    msg = f" Creating data for User: {dpg.get_value(user_data[1])}..."
+    with dpg.window(label=msg, modal=True, no_collapse=True, no_close=True,
+                    tag=BUSY_CREATING_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(BUSY_CREATING_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
 
 
 def _show_input_field(sender, app_data, user_data):

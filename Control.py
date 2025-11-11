@@ -134,8 +134,15 @@ def _load_user_data(sender, app_data, user_data):
     return
 
 def _create_user_data(sender, app_data, user_data):
+
+    #So user knows program is busy
+    View_HomeUI._popup_busy_creating_user(sender, app_data, user_data)
+
     result =  Model.create_user_data_files(sender, app_data, user_data)
 
     #Show popup if the username already exists
     if result == "Already exists":
         View_HomeUI._popup_create_user_failed(sender, app_data, user_data)
+
+    #So busy popup goes away
+    _check_window_exists(View_HomeUI.BUSY_CREATING_USER_WINDOW_TAG)
