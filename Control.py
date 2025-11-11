@@ -20,8 +20,9 @@ gears = dict()
 
 #-----------------------------------------------------------------------------------------
 def main():
-    View_HomeUI._create_homeUI()
     Model._initiate_log_file()
+    View_HomeUI._run_home_ui()
+    View_HomeUI._create_homeUI()
 
 if __name__ == "__main__":
     main()

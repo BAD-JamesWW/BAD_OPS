@@ -341,11 +341,12 @@ def _create_homeUI():
                         Control._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
 
 # -----------------------------------------------------------------------------------------
-dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)
-_create_homeUI()
-dpg.set_viewport_small_icon("assets/images/CompanyLogo.ico")
-dpg.set_viewport_large_icon("assets/images/CompanyLogo.ico")
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+def _run_home_ui():
+    dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)
+    _create_homeUI()
+    dpg.set_viewport_small_icon("assets/images/CompanyLogo.ico")
+    dpg.set_viewport_large_icon("assets/images/CompanyLogo.ico")
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()
