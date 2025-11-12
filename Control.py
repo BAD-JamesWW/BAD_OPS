@@ -20,7 +20,7 @@ gears = dict()
 
 #-----------------------------------------------------------------------------------------
 def main():
-    Model._initiate_log_file()
+    Model._initiate_log_file() #So log file is created overwritten anew, to prevent bloating
     View_HomeUI._run_home_ui()
     View_HomeUI._create_homeUI()
 
@@ -133,6 +133,19 @@ def _nuke_gear(sender, app_data, user_data):
             dpg.add_button(label="No", width=75, callback=_cancel)
 
 def _load_user_data(sender, app_data, user_data):
+    #todo check if password is correct for user and if not return with popup
+    result = Model._verify_user_password(sender, app_data, user_data)
+
+    if result == "User not in database":
+        View_HomeUI._popup_user_not_in_database(sender, app_data, user_data)
+        return
+    else:
+        View_HomeUI._popup_user_load_result(sender, app_data, [result[0], result[1]])
+
+    #todo if get here, just pass username to model and model will append name to file name and attempt a load, if that load fails that func will initiate a popup
+    if result[1] == True:
+        dpg.set_value("homescreen_header_text", f"Gear for {result[0]}")
+
     return
 
 def _create_user_data(sender, app_data, user_data):
@@ -142,12 +155,19 @@ def _create_user_data(sender, app_data, user_data):
 
     result =  Model.create_user_data_files(sender, app_data, user_data)
 
-    #Show popup if the username already exists
-    if result == "Already exists":
-        View_HomeUI._popup_create_user_failed(sender, app_data, user_data)
-
     #So busy popup goes away
     _check_window_exists(View_HomeUI.BUSY_CREATING_USER_WINDOW_TAG)
+
+    # Yield one frame so DPG clears the modal stack, or next popup in this function bugs out and doesn't show
+    dpg.split_frame()
+
+    # Show popup if the username already exists
+    if result == "Already exists":
+        View_HomeUI._popup_create_user_failed(sender, app_data, user_data)
+    elif result == "Creation Successful":
+        View_HomeUI._popup_user_creation_result(dpg.get_value(user_data[1]))
+
+
 
 def _delete_user_data(sender, app_data, user_data):
 
@@ -160,3 +180,6 @@ def _delete_user_data(sender, app_data, user_data):
 
     # So busy popup goes away
     _check_window_exists(View_HomeUI.BUSY_DELETING_USER_WINDOW_TAG)
+
+    #So homescreen header text changes back to default
+    dpg.set_value("homescreen_header_text", View_HomeUI.homescreen_header_default_text)

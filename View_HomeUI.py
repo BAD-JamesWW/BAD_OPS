@@ -15,6 +15,7 @@ import Control
 dpg.create_context()
 
 inputInProgress = False
+homescreen_header_default_text = "Gear"
 NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
 NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
 ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
@@ -23,6 +24,12 @@ ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
 ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
 USER_DELETION_RESULT_WINDOW_TAG = "user_deletion_result_window"
 USER_DELETION_RESULT_HANDLER_TAG = "user_deletion_result_handler"
+USER_NOT_IN_DATABASE_WINDOW_TAG = "user_not_in_databse_window"
+USER_NOT_IN_DATABASE_HANDLER_TAG = "user_not_in_database_handler"
+USER_CREATION_RESULT_WINDOW_TAG = "user_creation_result_window"
+USER_CREATION_RESULT_HANDLER_TAG = "user_creation_result_handler"
+USER_LOAD_RESULT_WINDOW_TAG = "user_load_result_window"
+USER_LOAD_RESULT_HANDLER_TAG = "user_load_result_handler"
 BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
 BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
 
@@ -87,6 +94,50 @@ def _popup_create_user_failed(sender, app_data, user_data):
     except Exception:
         pass
 
+def _popup_user_not_in_database(sender, app_data, user_data):
+    if dpg.does_item_exist(USER_NOT_IN_DATABASE_WINDOW_TAG):
+        dpg.delete_item(USER_NOT_IN_DATABASE_WINDOW_TAG)
+    if dpg.does_item_exist(USER_NOT_IN_DATABASE_HANDLER_TAG):
+        dpg.delete_item(USER_NOT_IN_DATABASE_HANDLER_TAG)
+
+    msg = f"User: {dpg.get_value(user_data[1])} not in database"
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=USER_NOT_IN_DATABASE_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_NOT_IN_DATABASE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_NOT_IN_DATABASE_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_NOT_IN_DATABASE_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_NOT_IN_DATABASE_WINDOW_TAG, USER_NOT_IN_DATABASE_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_user_load_result(sender, app_data, user_data):
+    if dpg.does_item_exist(USER_LOAD_RESULT_WINDOW_TAG):
+        dpg.delete_item(USER_LOAD_RESULT_WINDOW_TAG)
+    if dpg.does_item_exist(USER_LOAD_RESULT_HANDLER_TAG):
+        dpg.delete_item(USER_LOAD_RESULT_HANDLER_TAG)
+
+    if user_data[1] == False:
+        msg = f'Password for User: "{user_data[0]}" is invalid.'
+    else:
+        msg = f'Successfully logged in as User: "{user_data[0]}"'
+
+    with dpg.window(label=msg, modal=True, no_collapse=True,
+                    tag=USER_LOAD_RESULT_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_LOAD_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_LOAD_RESULT_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_LOAD_RESULT_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_LOAD_RESULT_WINDOW_TAG, USER_LOAD_RESULT_HANDLER_TAG)
+    except Exception:
+        pass
+
 def _popup_busy_creating_user(sender, app_data, user_data):
     if dpg.does_item_exist(BUSY_CREATING_USER_WINDOW_TAG):
         dpg.delete_item(BUSY_CREATING_USER_WINDOW_TAG)
@@ -130,6 +181,27 @@ def _popup_delete_user_result(username: str, result: str):
         dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_DELETION_RESULT_WINDOW_TAG))
     try:
         dpg.bind_item_handler_registry(USER_DELETION_RESULT_WINDOW_TAG, USER_DELETION_RESULT_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_user_creation_result(username: str):
+    if dpg.does_item_exist(USER_CREATION_RESULT_WINDOW_TAG):
+        dpg.delete_item(USER_CREATION_RESULT_WINDOW_TAG)
+    if dpg.does_item_exist(USER_CREATION_RESULT_HANDLER_TAG):
+        dpg.delete_item(USER_CREATION_RESULT_HANDLER_TAG)
+
+    msg = f"Identity diskspace allocated - \nUser: {username} brought online."
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=USER_CREATION_RESULT_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_CREATION_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_CREATION_RESULT_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_CREATION_RESULT_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_CREATION_RESULT_WINDOW_TAG, USER_CREATION_RESULT_HANDLER_TAG)
     except Exception:
         pass
 
@@ -222,6 +294,48 @@ def _show_input_field(sender, app_data, user_data):
             )
         )
 
+    elif fieldType == "user_to_load":
+        username_to_load_tag = "username_to_load_tag"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter name of user to load:",
+            tag=username_to_load_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            dpg.hide_item(username_to_load_tag), #So user can't break program flow by changing the entered username
+            _show_input_field(s, a, [button_container, "user_to_load_password", username_to_load_tag]),
+            )
+        )
+
+    elif fieldType == "user_to_load_password":
+        if extra_data_slot_01 is None:
+            return
+
+        user_to_load_password_tag = "user_to_load_password"
+        user_to_load_username = extra_data_slot_01
+
+        # Password input
+        dpg.add_input_text(
+            parent=button_container,
+            hint=f"Enter password for {dpg.get_value(extra_data_slot_01)}:",
+            tag=user_to_load_password_tag,
+            before=before_tag,
+            password=True,  # Mask input
+            on_enter=True,  # Hitting Enter here triggers callback
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._load_user_data(s, a, [button_container, user_to_load_username, user_to_load_password_tag, "home_ui_parent_window"]),
+
+                # So input fields for username & password are properly deleted
+                Control._check_window_exists(user_to_load_username),
+                Control._check_window_exists(user_to_load_password_tag)
+            )
+        )
+
     elif fieldType == "password_create":
         if extra_data_slot_01 is None:
             return
@@ -303,7 +417,7 @@ def _create_homeUI():
 
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=150)
-                    dpg.add_text("Gear")
+                    dpg.add_text(homescreen_header_default_text, tag="homescreen_header_text")
 
 
                 button_container = dpg.add_child_window(width=-1, height=-1, border=False)
@@ -315,9 +429,14 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
+                    load_account_btn = dpg.add_button(label="L User", callback=_show_input_field,
+                                                        user_data=[button_container, "user_to_load"])
+                    dpg.bind_item_theme(load_account_btn, red_button_theme)
+
                     delete_account_btn = dpg.add_button(label="- User", callback=_show_input_field,
                                                         user_data=[button_container, "user_delete"])
                     dpg.bind_item_theme(delete_account_btn, red_button_theme)
+
                     create_account_btn = dpg.add_button(label="+ User", callback=_show_input_field,
                                               user_data=[button_container, "user_create"])
                     dpg.bind_item_theme(create_account_btn, red_button_theme)

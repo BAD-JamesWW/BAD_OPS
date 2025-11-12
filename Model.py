@@ -145,9 +145,35 @@ def create_user_data_files(sender, app_data, user_data):
     with open(deployment_gear_times_file, 'w') as f:
         json.dump(data_for_deployment_gear_times, f, indent=4)
 
+    return "Creation Successful"
+
     #todo refactor code to accomdate for new file names
     #todo username_file_name.json files should be stored in a nested folder so root folder doesn't get messy
     #todo need a default file_name.json for gears and times if the user doesnt choose to create an acc before or after new data
+
+def _verify_user_password(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
+    password = dpg.get_value(user_data[2])
+    account_database_file = "account_database"
+
+    # Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
+            data_for_accounts = json.load(f)
+    else:
+        return "User not in database"
+
+    #check if user exists in database
+    if hashed_username not in data_for_accounts:
+        return "User not in database"
+
+    #check password
+    result = False
+    if data_for_accounts is not None:
+        password_of_hashed_username = data_for_accounts.get(hashed_username, ["<missing>"])[0]
+        result = bcrypt.checkpw(password.encode("utf-8"), password_of_hashed_username.encode("utf-8"))
+    return [username,result]
 
 
 def _delete_user_data_files(sender, app_data, user_data):
