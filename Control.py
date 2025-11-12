@@ -11,6 +11,7 @@ import View_HomeUI
 import View_GearUI_TrainingOptions
 import Model
 import View_GearUI_TrainingOptions_Track
+import View_GearUI_TrainingOptions_Train
 import dearpygui.dearpygui as dpg
 import pygame
 import os
@@ -56,6 +57,14 @@ def _delete_window(window_tag):
 def _check_window_exists(window_tag):
     if dpg.does_item_exist(window_tag):
         dpg.delete_item(window_tag)
+
+def _show_training_options_train_window(sender, appdata, user_data):
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in is True and username_of_user_logged_in != "":
+        View_GearUI_TrainingOptions_Train.show_timer(sender, appdata, user_data)
+    else:
+        View_GearUI_TrainingOptions._popup_generic_message("User must be logged in to train \ndeployment speed.")
 
 def _add_gear(gear_name: str, input_tag: str):
     global is_user_logged_in, username_of_user_logged_in
@@ -158,7 +167,7 @@ def get_sorted_deployment_scores(key_name: str) -> list:
     global is_user_logged_in, username_of_user_logged_in
 
     if is_user_logged_in == False and username_of_user_logged_in == "":
-        View_GearUI_TrainingOptions_Track._popup_generic_message("User must be logged in to get deployment \nscores.")
+        View_GearUI_TrainingOptions._popup_generic_message("User must be logged in to get deployment \nscores.")
         return []
 
     return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
