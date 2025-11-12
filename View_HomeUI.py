@@ -243,7 +243,7 @@ def _show_input_field(sender, app_data, user_data):
             before=before_tag,
             on_enter=True,
             callback=Control._add_gear,
-            user_data=[button_container, input_tag, "home_ui_parent_window"]
+            user_data=[input_tag, "home_ui_parent_window"]
         )
 
     elif fieldType == "remove":
@@ -371,6 +371,12 @@ def _show_input_field(sender, app_data, user_data):
     #todo will need to be able to create a new user with current gear data and time data in case user doesnt make acc first
     #todo make sure no 2 username can be the same
 
+def _load_gear(username: str, list_of_gears: list):
+    if list_of_gears is not None:
+        for gearName in list_of_gears:
+            gear_input_tag = dpg.generate_uuid()
+
+            Control._add_gear(gearName, gear_input_tag)
 
 # -----------------------------------------------------------------------------------------
 def _create_homeUI():
@@ -420,7 +426,7 @@ def _create_homeUI():
                     dpg.add_text(homescreen_header_default_text, tag="homescreen_header_text")
 
 
-                button_container = dpg.add_child_window(width=-1, height=-1, border=False)
+                button_container = dpg.add_child_window(width=-1, height=-1, border=False, tag="button_container_home_ui")
 
             # === Right Pane ===
             with dpg.child_window(width=150, height=400, border=False, tag="tag_right_pane"):
@@ -451,13 +457,6 @@ def _create_homeUI():
 
                     exclaim_btn = dpg.add_button(label="Nuke", callback=Control._nuke_gear)
                     dpg.bind_item_theme(exclaim_btn, red_button_theme)
-
-                savedGear = Model.load_deployment_gear()
-                if savedGear:
-                    for gearName in savedGear:
-                        gear_input_tag = dpg.generate_uuid()
-                        dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
-                        Control._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
 
 # -----------------------------------------------------------------------------------------
 def _run_home_ui():

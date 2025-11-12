@@ -29,35 +29,37 @@ def _initiate_log_file():
         format="%(asctime)s [%(levelname)s] %(message)s"
     )
 
-def save_deployment_gear(gear_name, filename="deployment_gear.json"):
-    """Saves a gear name to a JSON list if it doesn't already exist."""
+"""Saves a gear name to a JSON list if it doesn't already exist."""
+def save_deployment_gear(gear_name, username: str):
+    deployment_gear_file = f"{username}_deployment_gear.json"
 
     gear_name = gear_name.strip()
 
-    # Step 1: Load existing data or create new list
-    if os.path.exists(filename):
+    #Load existing data or create new data
+    if os.path.exists(deployment_gear_file):
         try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-            if not isinstance(data, list):
-                print(f"[Error] Data in {filename} is not a list.")
+            with open(deployment_gear_file, 'r') as f:
+                data_for_deployment_gear = json.load(f)
+            if not isinstance(data_for_deployment_gear, list):
+                print(f"[Error] Data in {deployment_gear_file} is not a list.")
                 return
         except json.JSONDecodeError:
-            print(f"[Error] Failed to decode JSON in {filename}.")
+            print(f"[Error] Failed to decode JSON in {deployment_gear_file}.")
             return
     else:
-        data = []
+        data_for_deployment_gear = []
 
-    # Step 2: Check for existence
-    if gear_name not in data:
-        data.append(gear_name)
+    #Check for existence
+    if gear_name not in data_for_deployment_gear:
+        data_for_deployment_gear.append(gear_name)
 
-        # Step 3: Save updated list back to file
-        with open(filename, 'w') as f:
-            json.dump(data, f, indent=4)
+        #Save updated list back to file
+        with open(deployment_gear_file, 'w') as f:
+            json.dump(data_for_deployment_gear, f, indent=4)
 
 
-def save_deployment_gear_time(time, gear_name, filename="deployment_scores.json"):
+def save_deployment_gear_score(score: int, gear_name: str, username: str):
+    filename = f"{username}_deployment_scores.json"
     # Step 1: Load existing data (or create empty structure if file doesn't exist)
     if os.path.exists(filename):
         with open(filename, "r") as f:
@@ -69,16 +71,17 @@ def save_deployment_gear_time(time, gear_name, filename="deployment_scores.json"
     if gear_name not in data:
         data[gear_name] = []
 
-    data[gear_name].append(time)
+    data[gear_name].append(score)
 
     # Step 3: Write the updated data back to file
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
 
 
+"""Loads and returns a list of gear names from a JSON file. Returns None if file missing or empty."""
+def load_deployment_gear(username: str):
+    filename = f"{username}_deployment_gear.json"
 
-def load_deployment_gear(filename="deployment_gear.json"):
-    """Loads and returns a list of gear names from a JSON file. Returns None if file missing or empty."""
     if not os.path.exists(filename):
         return None
 
@@ -123,27 +126,6 @@ def create_user_data_files(sender, app_data, user_data):
     #Append user to account database file
     with open(account_database_file, "w") as f:
         json.dump(data_for_accounts, f, indent=4)
-
-
-    #Create file for "username"_deployment_gear
-    deployment_gear_file = f"{username}_deployment_gear.json"
-    if os.path.exists(deployment_gear_file):
-        with open(deployment_gear_file, "r") as f:
-            data_for_deployment_gear = json.load(f)
-    else:
-        data_for_deployment_gear = []
-    with open(deployment_gear_file, 'w') as f:
-        json.dump(data_for_deployment_gear, f, indent=4)
-
-    #Create file for "username"_deployment_gear_times
-    deployment_gear_times_file = f"{username}_deployment_gear_times.json"
-    if os.path.exists(deployment_gear_times_file):
-        with open(deployment_gear_times_file, "r") as f:
-            data_for_deployment_gear_times = json.load(f)
-    else:
-        data_for_deployment_gear_times = {}
-    with open(deployment_gear_times_file, 'w') as f:
-        json.dump(data_for_deployment_gear_times, f, indent=4)
 
     return "Creation Successful"
 
@@ -196,19 +178,21 @@ def _delete_user_data_files(sender, app_data, user_data):
         with open(account_database_file, "w") as f:
             json.dump(data_for_accounts, f, indent=4)
         deployment_gear_file = f"{username}_deployment_gear.json"
-        deployment_gear_times_file = f"{username}_deployment_gear_times.json"
+        deployment_gear_scores_file = f"{username}_deployment_gear_scores.json"
         try:
             os.remove(deployment_gear_file)
         except FileNotFoundError:
             logging.info(f"deployment gear file for user {username} not found")
         try:
-            os.remove(deployment_gear_times_file)
+            os.remove(deployment_gear_scores_file)
         except FileNotFoundError:
             logging.info(f"deployment gear times file for user {username} not found")
     else:
         return "Does not exist"
 
-def delete_deployment_gear_time(gear_name, filename="deployment_times.json"):
+def delete_deployment_gear_scores(gear_name, username: str):
+    filename = f"{username}_deployment_times.json"
+
     # Step 1: Check if the file exists
     if not os.path.exists(filename):
         print("No data file found.")
@@ -228,9 +212,9 @@ def delete_deployment_gear_time(gear_name, filename="deployment_times.json"):
     with open(filename, "w") as f:
         json.dump(data, f, indent=4)
 
-
-def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
-    """Deletes a specific gear entry from a JSON list file."""
+"""Deletes a specific gear entry from a JSON list file."""
+def delete_deployment_gear(gear_name, username: str):
+    filename = f"{username}_deployment_gear.json"
 
     # Check if the file exists
     if not os.path.exists(filename):
@@ -261,7 +245,9 @@ def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
         print(f"[Warning] Gear '{gear_name}' not found in file.")
 
 
-def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_times.json") -> list:
+def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
+    filename = f"{username}_deployment_scores.json"
+
     def time_to_milliseconds(time_str):
         hours, minutes, rest = time_str.split(':')
         seconds, millis = rest.split('.')
@@ -274,7 +260,7 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_times.js
         return total_millis
 
     try:
-        with open(file_path, 'r') as file:
+        with open(filename, 'r') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Error loading JSON: {e}")

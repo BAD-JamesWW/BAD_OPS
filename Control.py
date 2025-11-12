@@ -17,6 +17,8 @@ import os
 pygame.mixer.init()
 
 gears = dict()
+is_user_logged_in = False
+username_of_user_logged_in = ""
 
 #-----------------------------------------------------------------------------------------
 def main():
@@ -54,15 +56,15 @@ def _check_window_exists(window_tag):
     if dpg.does_item_exist(window_tag):
         dpg.delete_item(window_tag)
 
-def _add_gear(sender, app_data, user_data):
-    button_container = user_data[0]
-    input_tag = user_data[1]
-    home_ui_window = user_data[2]
+def _add_gear(gear_name,input_tag):
+    global is_user_logged_in, username_of_user_logged_in
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
 
     View_HomeUI.inputInProgress = False
+
+    dpg.add_input_text(parent="home_ui_parent_window" ,default_value=gear_name, tag=input_tag)
 
     # === Gear Button Theme (Red Highlight) ===
     with dpg.theme() as red_button_theme:
@@ -72,16 +74,19 @@ def _add_gear(sender, app_data, user_data):
 
 
     if dpg.is_item_shown(input_tag):
-        gear_name = str(dpg.get_value(input_tag).strip())
 
         if gear_name and gears.get(gear_name, "doesNotExist") == "doesNotExist":
             gears[gear_name] = {"gear_button_tag": gear_name}
-            with dpg.group(horizontal=True, parent=button_container):
+            with dpg.group(horizontal=True, parent="button_container_home_ui"):
                 dpg.add_spacer(width=padding)
                 dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name,
-                               callback=View_GearUI_TrainingOptions.start, user_data=[gear_name, home_ui_window])
+                               callback=View_GearUI_TrainingOptions.start, user_data=[gear_name, "home_ui_parent_window"])
                 dpg.bind_item_theme(gear_name, red_button_theme)
-                Model.save_deployment_gear(f"{gear_name}")
+
+            #If a user is logged in, data can save to their corresponding file
+            if is_user_logged_in == True and username_of_user_logged_in != "":
+                Model.save_deployment_gear(gear_name = f"{gear_name}", username=username_of_user_logged_in)
+
             dpg.hide_item(input_tag)
             dpg.set_value(input_tag, "")
         else:
@@ -90,7 +95,10 @@ def _add_gear(sender, app_data, user_data):
     else:
         dpg.show_item(input_tag)
 
+    return
+
 def _remove_gear(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
     View_HomeUI.inputInProgress = False
     input_tag = user_data[1]
     if dpg.is_item_shown(input_tag):
@@ -98,8 +106,12 @@ def _remove_gear(sender, app_data, user_data):
         if gear_name and gears.get(str(gear_name), "doesNotExist") != "doesNotExist":
             gearButtonToRemove = gears.pop(str(gear_name))
             dpg.delete_item(gearButtonToRemove["gear_button_tag"])
-            Model.delete_deployment_gear_time(gearButtonToRemove["gear_button_tag"])
-            Model.delete_deployment_gear(gearButtonToRemove["gear_button_tag"])
+
+            # If a user is logged in, gear data can be deleted from their corresponding file
+            if is_user_logged_in == True and username_of_user_logged_in != "":
+                Model.delete_deployment_gear_scores(gear_name = gearButtonToRemove["gear_button_tag"], username = username_of_user_logged_in)
+                Model.delete_deployment_gear(gear_name = gearButtonToRemove["gear_button_tag"], username = username_of_user_logged_in)
+
             dpg.hide_item(input_tag)
             dpg.set_value(input_tag, "")
         else:
@@ -109,6 +121,7 @@ def _remove_gear(sender, app_data, user_data):
         dpg.show_item(input_tag)
 
 def _nuke_gear(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
     if dpg.does_item_exist("nuke_confirm_window"):
         dpg.delete_item("nuke_confirm_window")
 
@@ -119,8 +132,11 @@ def _nuke_gear(sender, app_data, user_data):
         for gear in list(gears):
             gearButtonToRemove = gears.pop(str(gear))
             dpg.delete_item(gearButtonToRemove["gear_button_tag"])
-            Model.delete_deployment_gear(gearButtonToRemove["gear_button_tag"])
-            Model.delete_deployment_gear_time(gearButtonToRemove["gear_button_tag"])
+
+            # If a user is logged in, gear data can be deleted from their corresponding file
+            if is_user_logged_in == True and username_of_user_logged_in != "":
+                Model.delete_deployment_gear(gear_name = gearButtonToRemove["gear_button_tag"], username = username_of_user_logged_in)
+                Model.delete_deployment_gear_scores(gear_name = gearButtonToRemove["gear_button_tag"], username = username_of_user_logged_in)
 
     def _cancel():
         dpg.delete_item("nuke_confirm_window")
@@ -132,21 +148,37 @@ def _nuke_gear(sender, app_data, user_data):
             dpg.add_button(label="Yes", width=75, callback=_confirm)
             dpg.add_button(label="No", width=75, callback=_cancel)
 
+def _save_deployment_gear_score(score: int, gear_name: str):
+    Model.save_deployment_gear_score(score = score, gear_name = gear_name, username = username_of_user_logged_in)
+
+def get_sorted_deployment_scores(key_name: str) -> list:
+    return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
+
 def _load_user_data(sender, app_data, user_data):
     #todo check if password is correct for user and if not return with popup
     result = Model._verify_user_password(sender, app_data, user_data)
+    username = result[0]
+    login_result = result[1]
 
     if result == "User not in database":
         View_HomeUI._popup_user_not_in_database(sender, app_data, user_data)
         return
     else:
-        View_HomeUI._popup_user_load_result(sender, app_data, [result[0], result[1]])
+        View_HomeUI._popup_user_load_result(sender, app_data, [username, login_result])
 
     #todo if get here, just pass username to model and model will append name to file name and attempt a load, if that load fails that func will initiate a popup
     if result[1] == True:
-        dpg.set_value("homescreen_header_text", f"Gear for {result[0]}")
+        global is_user_logged_in, username_of_user_logged_in
+        is_user_logged_in = True
+        username_of_user_logged_in = username
+        dpg.set_value("homescreen_header_text", f"Gear for {username}")
+        list_of_gears = Model.load_deployment_gear(username)
+        if list_of_gears is not None:
+            View_HomeUI._load_gear(username, list_of_gears)
 
     return
+
+#todo user logout and maybe change load user data to login user or something and dont forget login status
 
 def _create_user_data(sender, app_data, user_data):
 
@@ -183,3 +215,5 @@ def _delete_user_data(sender, app_data, user_data):
 
     #So homescreen header text changes back to default
     dpg.set_value("homescreen_header_text", View_HomeUI.homescreen_header_default_text)
+
+    #todo clear and reset homeUI and load default

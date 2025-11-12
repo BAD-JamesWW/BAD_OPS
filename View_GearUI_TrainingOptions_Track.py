@@ -40,7 +40,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     annotation_tags.clear()  # Reset when graph is refreshed
 
     gear = user_data
-    training_data = Model.get_sorted_times_by_key(gear)
+    training_data = Control.get_sorted_deployment_scores(gear)
 
     if len(training_data) == 0:
         return
