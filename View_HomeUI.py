@@ -34,6 +34,7 @@ BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
 BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
 
 
+
 def _popup_remove_gear_failed(isInputEmpty):
     if dpg.does_item_exist(NON_EXISTENT_GEAR_WINDOW_TAG):
         dpg.delete_item(NON_EXISTENT_GEAR_WINDOW_TAG)
@@ -41,7 +42,7 @@ def _popup_remove_gear_failed(isInputEmpty):
         dpg.delete_item(NON_EXISTENT_GEAR_HANDLER_TAG)
 
     msg = "Please enter valid input" if isInputEmpty else "Gear Doesn't exist"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=NON_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -61,7 +62,7 @@ def _popup_add_gear_failed(isInputEmpty):
         dpg.delete_item(ALREADY_EXISTENT_GEAR_HANDLER_TAG)
 
     msg = "Enter a valid gear name" if isInputEmpty else "Gear Already Exists"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=ALREADY_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -81,7 +82,7 @@ def _popup_create_user_failed(sender, app_data, user_data):
         dpg.delete_item(ALREADY_EXISTENT_USER_HANDLER_TAG)
 
     msg = f"User: {dpg.get_value(user_data[1])} already exists"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=ALREADY_EXISTENT_USER_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -101,7 +102,7 @@ def _popup_user_not_in_database(sender, app_data, user_data):
         dpg.delete_item(USER_NOT_IN_DATABASE_HANDLER_TAG)
 
     msg = f"User: {dpg.get_value(user_data[1])} not in database"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=USER_NOT_IN_DATABASE_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -125,7 +126,7 @@ def _popup_user_load_result(sender, app_data, user_data):
     else:
         msg = f'Successfully logged in as User: "{user_data[0]}"'
 
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=USER_LOAD_RESULT_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -143,7 +144,7 @@ def _popup_busy_creating_user(sender, app_data, user_data):
         dpg.delete_item(BUSY_CREATING_USER_WINDOW_TAG)
 
     msg = f" Creating data for User: {dpg.get_value(user_data[1])}..."
-    with dpg.window(label=msg, modal=True, no_collapse=True, no_close=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True, no_close=True,
                     tag=BUSY_CREATING_USER_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -154,7 +155,7 @@ def _popup_busy_deleting_user(sender, app_data, user_data):
         dpg.delete_item(BUSY_DELETING_USER_WINDOW_TAG)
 
     msg = f"Deleting data for User: {dpg.get_value(user_data[1])}..."
-    with dpg.window(label=msg, modal=True, no_collapse=True, no_close=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True, no_close=True,
                     tag=BUSY_DELETING_USER_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -171,7 +172,7 @@ def _popup_delete_user_result(username: str, result: str):
     else:
         msg = f"User: {username} successfully derezzed"
 
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=USER_DELETION_RESULT_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -183,6 +184,8 @@ def _popup_delete_user_result(username: str, result: str):
         dpg.bind_item_handler_registry(USER_DELETION_RESULT_WINDOW_TAG, USER_DELETION_RESULT_HANDLER_TAG)
     except Exception:
         pass
+
+
 
 def _popup_user_creation_result(username: str):
     if dpg.does_item_exist(USER_CREATION_RESULT_WINDOW_TAG):
@@ -242,9 +245,9 @@ def _show_input_field(sender, app_data, user_data):
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=Control._add_gear,
-            user_data=[input_tag, "home_ui_parent_window"]
+            callback=lambda s, a, u: Control._add_gear(dpg.get_value(input_tag).strip(), input_tag)
         )
+
 
     elif fieldType == "remove":
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)

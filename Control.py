@@ -10,6 +10,7 @@
 import View_HomeUI
 import View_GearUI_TrainingOptions
 import Model
+import View_GearUI_TrainingOptions_Track
 import dearpygui.dearpygui as dpg
 import pygame
 import os
@@ -56,46 +57,48 @@ def _check_window_exists(window_tag):
     if dpg.does_item_exist(window_tag):
         dpg.delete_item(window_tag)
 
-def _add_gear(gear_name,input_tag):
+def _add_gear(gear_name: str, input_tag: str):
     global is_user_logged_in, username_of_user_logged_in
+    View_HomeUI.inputInProgress = False
+
+    if not gear_name:
+        View_HomeUI._popup_add_gear_failed(isInputEmpty=True)
+        dpg.set_value(input_tag, "")
+        return
+
     button_width = 200
     child_width = 380
     padding = (child_width - button_width) // 2
 
-    View_HomeUI.inputInProgress = False
-
-    dpg.add_input_text(parent="home_ui_parent_window" ,default_value=gear_name, tag=input_tag)
-
-    # === Gear Button Theme (Red Highlight) ===
+    # theme
     with dpg.theme() as red_button_theme:
         with dpg.theme_component(dpg.mvButton):
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))  # Dark red hover
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))   # Bright red active
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))
 
+    if gears.get(gear_name, "doesNotExist") == "doesNotExist":
+        gears[gear_name] = {"gear_button_tag": gear_name}
+        with dpg.group(horizontal=True, parent="button_container_home_ui"):
+            dpg.add_spacer(width=padding)
+            dpg.add_button(
+                label=gear_name,
+                width=button_width,
+                height=100,
+                tag=gear_name,
+                callback=View_GearUI_TrainingOptions.start,
+                user_data=[gear_name, "home_ui_parent_window"]
+            )
+            dpg.bind_item_theme(gear_name, red_button_theme)
 
-    if dpg.is_item_shown(input_tag):
+        if is_user_logged_in and username_of_user_logged_in:
+            Model.save_deployment_gear(gear_name=gear_name, username=username_of_user_logged_in)
 
-        if gear_name and gears.get(gear_name, "doesNotExist") == "doesNotExist":
-            gears[gear_name] = {"gear_button_tag": gear_name}
-            with dpg.group(horizontal=True, parent="button_container_home_ui"):
-                dpg.add_spacer(width=padding)
-                dpg.add_button(label=f"{gear_name}", width=button_width, height=100, tag=gear_name,
-                               callback=View_GearUI_TrainingOptions.start, user_data=[gear_name, "home_ui_parent_window"])
-                dpg.bind_item_theme(gear_name, red_button_theme)
-
-            #If a user is logged in, data can save to their corresponding file
-            if is_user_logged_in == True and username_of_user_logged_in != "":
-                Model.save_deployment_gear(gear_name = f"{gear_name}", username=username_of_user_logged_in)
-
-            dpg.hide_item(input_tag)
-            dpg.set_value(input_tag, "")
-        else:
-            View_HomeUI._popup_add_gear_failed(isInputEmpty=(dpg.get_value(input_tag).strip() == ""))
-            dpg.set_value(input_tag, "")
+        dpg.hide_item(input_tag)
+        dpg.set_value(input_tag, "")
     else:
-        dpg.show_item(input_tag)
+        View_HomeUI._popup_add_gear_failed(isInputEmpty=False)
+        dpg.set_value(input_tag, "")
 
-    return
 
 def _remove_gear(sender, app_data, user_data):
     global is_user_logged_in, username_of_user_logged_in
@@ -152,6 +155,12 @@ def _save_deployment_gear_score(score: int, gear_name: str):
     Model.save_deployment_gear_score(score = score, gear_name = gear_name, username = username_of_user_logged_in)
 
 def get_sorted_deployment_scores(key_name: str) -> list:
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in == False and username_of_user_logged_in == "":
+        View_GearUI_TrainingOptions_Track._popup_generic_message("User must be logged in to get deployment \nscores.")
+        return []
+
     return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
 
 def _load_user_data(sender, app_data, user_data):
@@ -175,8 +184,6 @@ def _load_user_data(sender, app_data, user_data):
         list_of_gears = Model.load_deployment_gear(username)
         if list_of_gears is not None:
             View_HomeUI._load_gear(username, list_of_gears)
-
-    return
 
 #todo user logout and maybe change load user data to login user or something and dont forget login status
 

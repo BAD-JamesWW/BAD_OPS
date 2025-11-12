@@ -10,6 +10,28 @@ import dearpygui.dearpygui as dpg
 import Model
 import Control
 
+GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
+GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
+
+def _popup_generic_message(msg: str):
+    if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
+    if dpg.does_item_exist(GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_HANDLER_TAG)
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=GENERIC_MESSAGE_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(GENERIC_MESSAGE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(GENERIC_MESSAGE_WINDOW_TAG, GENERIC_MESSAGE_HANDLER_TAG)
+    except Exception:
+        pass
+
 def time_to_milliseconds(time_str):
     if time_str.count(":") != 2 or "." not in time_str:
         raise ValueError(f"Invalid time format: {time_str}")
