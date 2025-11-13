@@ -32,8 +32,27 @@ USER_LOAD_RESULT_WINDOW_TAG = "user_load_result_window"
 USER_LOAD_RESULT_HANDLER_TAG = "user_load_result_handler"
 BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
 BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
+GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
+GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
 
+def _popup_generic_message(msg: str):
+    if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
+    if dpg.does_item_exist(GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_HANDLER_TAG)
 
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=GENERIC_MESSAGE_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(GENERIC_MESSAGE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(GENERIC_MESSAGE_WINDOW_TAG, GENERIC_MESSAGE_HANDLER_TAG)
+    except Exception:
+        pass
 
 def _popup_remove_gear_failed(isInputEmpty):
     if dpg.does_item_exist(NON_EXISTENT_GEAR_WINDOW_TAG):
@@ -246,24 +265,28 @@ def _show_input_field(sender, app_data, user_data):
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            label="Enter gear name:",
+            hint="Enter gear name (Leading and trailing spaces are ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=lambda s, a, u: Control._add_gear(dpg.get_value(input_tag).strip(), input_tag)
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._add_gear(dpg.get_value(input_tag).strip(), input_tag.strip()),
+            )
         )
-
 
     elif fieldType == "remove":
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            label="Enter gear name:",
+            hint="Enter gear name (Leading and trailing spaces are ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=Control._remove_gear,
-            user_data=[button_container, input_tag]
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            Control._remove_gear(s, a, [button_container, input_tag.strip()])
+            )
         )
 
     elif fieldType == "user_create":
@@ -272,14 +295,14 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter username:",
+            hint="Enter username (Leading and trailing spaces are ignored):",
             tag=username_tag,
             before=before_tag,
             on_enter=True,
             callback=lambda s, a, u: (
             globals().__setitem__("inputInProgress", False),
             dpg.hide_item(username_tag), #So user can't break program flow by changing the entered username
-            _show_input_field(s, a, [button_container, "password_create", username_tag]),
+            _show_input_field(s, a, [button_container, "password_create", username_tag.strip()])
             )
         )
 
@@ -289,13 +312,13 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter username to delete:",
+            hint="Enter username to delete (Leading and trailing spaces are ignored):",
             tag=username_to_delete_tag,
             before=before_tag,
             on_enter=True,
             callback=lambda s, a, u: (
             globals().__setitem__("inputInProgress", False),
-            Control._delete_user_data(sender, app_data, [button_container, username_to_delete_tag]),
+            Control._delete_user_data(sender, app_data, [button_container, username_to_delete_tag.strip()]),
 
             #So input field is properly deleted after use
             Control._check_window_exists(username_to_delete_tag)
@@ -308,14 +331,14 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter name of user to load:",
+            hint="Enter name of user to load (Leading and trailing spaces are ignored):",
             tag=username_to_load_tag,
             before=before_tag,
             on_enter=True,
             callback=lambda s, a, u: (
             globals().__setitem__("inputInProgress", False),
             dpg.hide_item(username_to_load_tag), #So user can't break program flow by changing the entered username
-            _show_input_field(s, a, [button_container, "user_to_load_password", username_to_load_tag]),
+            _show_input_field(s, a, [button_container, "user_to_load_password", username_to_load_tag.strip()])
             )
         )
 
@@ -354,7 +377,7 @@ def _show_input_field(sender, app_data, user_data):
         # Password input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter password (Spaces Are Ignored):",
+            hint="Enter password (Spaces are prohibited):",
             tag=password_tag,
             before=before_tag,
             password=True,  # Mask input
@@ -369,9 +392,6 @@ def _show_input_field(sender, app_data, user_data):
             )
         )
 
-
-    elif fieldType == "account_load":
-        pass
     #todo have control save username so i can then do password and only then should a load attempt be made on usualFileName with username appended that filename
     #todo if there is a user in the database that has that password attached to them
     #todo if the file doesnt exist popup will activate and this user doesn't exist
@@ -379,12 +399,39 @@ def _show_input_field(sender, app_data, user_data):
     #todo will need to be able to create a new user with current gear data and time data in case user doesnt make acc first
     #todo make sure no 2 username can be the same
 
-def _load_gear(username: str, list_of_gears: list):
+def _load_gear_buttons(username: str, list_of_gears: list):
     if list_of_gears is not None:
-        for gearName in list_of_gears:
-            gear_input_tag = dpg.generate_uuid()
+        for gear_name in list_of_gears:
 
-            Control._add_gear(gearName, gear_input_tag)
+            button_width = 200
+            child_width = 380
+            padding = (child_width - button_width) // 2
+
+            # theme
+            with dpg.theme() as red_button_theme:
+                with dpg.theme_component(dpg.mvButton):
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))
+
+                with dpg.group(horizontal=True, parent="button_container_home_ui"):
+                    dpg.add_spacer(width=padding)
+                    dpg.add_button(
+                        label=gear_name,
+                        width=button_width,
+                        height=100,
+                        tag=gear_name,
+                        callback=lambda s, a, u: (
+                            Control._start_training_options_window(s, a, [gear_name, "home_ui_parent_window"])
+                        )
+                    )
+                    dpg.bind_item_theme(gear_name, red_button_theme)
+
+def _nuke_gear():
+    global inputInProgress
+    if inputInProgress == True:
+        return
+    else:
+        Control._nuke_gear()
 
 # -----------------------------------------------------------------------------------------
 def _create_homeUI():
@@ -443,6 +490,9 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
+                    logout_account_btn = dpg.add_button(label="LO User", callback=Control._logout_user)
+                    dpg.bind_item_theme(logout_account_btn, red_button_theme)
+
                     load_account_btn = dpg.add_button(label="L User", callback=_show_input_field,
                                                         user_data=[button_container, "user_to_load"])
                     dpg.bind_item_theme(load_account_btn, red_button_theme)
@@ -463,7 +513,7 @@ def _create_homeUI():
                                                user_data=[button_container,"remove"])
                     dpg.bind_item_theme(minus_btn, red_button_theme)
 
-                    exclaim_btn = dpg.add_button(label="Nuke", callback=Control._nuke_gear)
+                    exclaim_btn = dpg.add_button(label="Nuke", callback=_nuke_gear)
                     dpg.bind_item_theme(exclaim_btn, red_button_theme)
 
 # -----------------------------------------------------------------------------------------

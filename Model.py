@@ -33,7 +33,7 @@ def _initiate_log_file():
 def save_deployment_gear(gear_name, username: str):
     deployment_gear_file = f"{username}_deployment_gear.json"
 
-    gear_name = gear_name.strip()
+    gear_name = gear_name
 
     #Load existing data or create new data
     if os.path.exists(deployment_gear_file):

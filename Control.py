@@ -66,6 +66,9 @@ def _show_training_options_train_window(sender, appdata, user_data):
     else:
         View_GearUI_TrainingOptions._popup_generic_message("User must be logged in to train \ndeployment speed.")
 
+def _start_training_options_window(sender, appdata, user_data):
+    View_GearUI_TrainingOptions.start(sender, appdata, user_data)
+
 def _add_gear(gear_name: str, input_tag: str):
     global is_user_logged_in, username_of_user_logged_in
     View_HomeUI.inputInProgress = False
@@ -113,7 +116,7 @@ def _remove_gear(sender, app_data, user_data):
     View_HomeUI.inputInProgress = False
     input_tag = user_data[1]
     if dpg.is_item_shown(input_tag):
-        gear_name = dpg.get_value(input_tag).strip()
+        gear_name = dpg.get_value(input_tag)
         if gear_name and gears.get(str(gear_name), "doesNotExist") != "doesNotExist":
             gearButtonToRemove = gears.pop(str(gear_name))
             dpg.delete_item(gearButtonToRemove["gear_button_tag"])
@@ -126,12 +129,12 @@ def _remove_gear(sender, app_data, user_data):
             dpg.hide_item(input_tag)
             dpg.set_value(input_tag, "")
         else:
-            View_HomeUI._popup_remove_gear_failed(isInputEmpty=(dpg.get_value(input_tag).strip() == ""))
+            View_HomeUI._popup_remove_gear_failed(isInputEmpty=(gear_name == ""))
             dpg.set_value(input_tag, "")
     else:
         dpg.show_item(input_tag)
 
-def _nuke_gear(sender, app_data, user_data):
+def _nuke_gear():
     global is_user_logged_in, username_of_user_logged_in
     if dpg.does_item_exist("nuke_confirm_window"):
         dpg.delete_item("nuke_confirm_window")
@@ -171,7 +174,27 @@ def get_sorted_deployment_scores(key_name: str) -> list:
 
     return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
 
+def _logout_user():
+    global is_user_logged_in, username_of_user_logged_in
+
+    #reset global trackers
+    is_user_logged_in = False
+    username_of_user_logged_in = ""
+
+    #Remove gear buttons from home UI
+    View_HomeUI._clear_gear_buttons()
+
+    #Change header text of HomeUI
+    dpg.set_value("homescreen_header_text", "Gear")
+
+
 def _load_user_data(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in == True and username_of_user_logged_in != "":
+        View_HomeUI._popup_generic_message("You must be logged out to login to \nan account")
+        return
+
     #todo check if password is correct for user and if not return with popup
     result = Model._verify_user_password(sender, app_data, user_data)
     username = result[0]
@@ -186,17 +209,29 @@ def _load_user_data(sender, app_data, user_data):
 
     #todo if get here, just pass username to model and model will append name to file name and attempt a load, if that load fails that func will initiate a popup
     if result[1] == True:
-        global is_user_logged_in, username_of_user_logged_in
         is_user_logged_in = True
         username_of_user_logged_in = username
         dpg.set_value("homescreen_header_text", f"Gear for {username}")
         list_of_gears = Model.load_deployment_gear(username)
         if list_of_gears is not None:
-            View_HomeUI._load_gear(username, list_of_gears)
+            View_HomeUI._load_gear_buttons(username, list_of_gears)
 
 #todo user logout and maybe change load user data to login user or something and dont forget login status
 
 def _create_user_data(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in == True and username_of_user_logged_in != "":
+        View_HomeUI._popup_generic_message("You must be logged out to create \nan account")
+        return
+
+    #So user cannot create a username or password with an empty string
+    if dpg.get_value(user_data[1]) == "":
+        View_HomeUI._popup_generic_message("You cannot create an empty username")
+        return
+    if (dpg.get_value(user_data[2]) == "") or (" " in dpg.get_value(user_data[2])):
+        View_HomeUI._popup_generic_message("Spaces in the password are prohibited")
+        return
 
     #So user knows program is busy
     View_HomeUI._popup_busy_creating_user(sender, app_data, user_data)
@@ -215,9 +250,12 @@ def _create_user_data(sender, app_data, user_data):
     elif result == "Creation Successful":
         View_HomeUI._popup_user_creation_result(dpg.get_value(user_data[1]))
 
-
-
 def _delete_user_data(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in == True and username_of_user_logged_in != "":
+        View_HomeUI._popup_generic_message("You must be logged out to delete \nan account")
+        return
 
     #So user knows program is busy
     View_HomeUI._popup_busy_deleting_user(sender, app_data, user_data)
