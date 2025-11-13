@@ -108,7 +108,6 @@ def _add_gear(gear_name: str, input_tag: str):
         View_HomeUI._popup_add_gear_failed(isInputEmpty=False)
         dpg.set_value(input_tag, "")
 
-
 def _remove_gear(sender, app_data, user_data):
     global is_user_logged_in, username_of_user_logged_in
     View_HomeUI.inputInProgress = False
@@ -182,6 +181,7 @@ def _load_user_data(sender, app_data, user_data):
         View_HomeUI._popup_user_not_in_database(sender, app_data, user_data)
         return
     else:
+        View_HomeUI._clear_gear_buttons()
         View_HomeUI._popup_user_load_result(sender, app_data, [username, login_result])
 
     #todo if get here, just pass username to model and model will append name to file name and attempt a load, if that load fails that func will initiate a popup

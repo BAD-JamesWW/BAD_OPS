@@ -208,6 +208,11 @@ def _popup_user_creation_result(username: str):
     except Exception:
         pass
 
+#Clears gear buttons displayed on the home screen
+def _clear_gear_buttons():
+    if dpg.does_item_exist("button_container_home_ui"):
+        for child in (dpg.get_item_children("button_container_home_ui", 1) or []):
+            dpg.delete_item(child)
 
 def _show_input_field(sender, app_data, user_data):
     global inputInProgress
