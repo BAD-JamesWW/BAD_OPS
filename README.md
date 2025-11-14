@@ -26,6 +26,7 @@ This project uses:
 - [Dear PyGui](https://github.com/hoffstadt/DearPyGui) — Licensed under the MIT License
 - [Vosk Speech Recognition Toolkit](https://alphacephei.com/vosk/) — Licensed under the Apache License 2.0
 - [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) — Licensed under the MIT License
+- [bcrypt](https://pypi.org/project/bcrypt/) - Licensed under the Apache License 2.0
 
 ---
 
