@@ -5,15 +5,16 @@
 # Unauthorized use, reproduction, or distribution is prohibited and may violate
 # copyright, trademark, and unfair competition laws.
 
-
 # Description: Responsible for the Home UI as a whole.
+
+# -----------------------------------------------------------------------------------------
 from dearpygui import dearpygui as dpg
-import Model
 import Control
 
-
+# -----------------------------------------------------------------------------------------
 dpg.create_context()
 
+# -----------------------------------------------------------------------------------------
 inputInProgress = False
 homescreen_header_default_text = "Gear"
 NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
@@ -24,17 +25,14 @@ ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
 ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
 USER_DELETION_RESULT_WINDOW_TAG = "user_deletion_result_window"
 USER_DELETION_RESULT_HANDLER_TAG = "user_deletion_result_handler"
-USER_NOT_IN_DATABASE_WINDOW_TAG = "user_not_in_databse_window"
-USER_NOT_IN_DATABASE_HANDLER_TAG = "user_not_in_database_handler"
 USER_CREATION_RESULT_WINDOW_TAG = "user_creation_result_window"
 USER_CREATION_RESULT_HANDLER_TAG = "user_creation_result_handler"
-USER_LOAD_RESULT_WINDOW_TAG = "user_load_result_window"
-USER_LOAD_RESULT_HANDLER_TAG = "user_load_result_handler"
 BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
 BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
 GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
 GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
 
+# -------------------------------------(Start Pop-Ups)-------------------------------------
 def _popup_generic_message(msg: str):
     if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
         dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
@@ -114,50 +112,6 @@ def _popup_create_user_failed(sender, app_data, user_data):
     except Exception:
         pass
 
-def _popup_user_not_in_database(sender, app_data, user_data):
-    if dpg.does_item_exist(USER_NOT_IN_DATABASE_WINDOW_TAG):
-        dpg.delete_item(USER_NOT_IN_DATABASE_WINDOW_TAG)
-    if dpg.does_item_exist(USER_NOT_IN_DATABASE_HANDLER_TAG):
-        dpg.delete_item(USER_NOT_IN_DATABASE_HANDLER_TAG)
-
-    msg = f"User: {dpg.get_value(user_data[1])} not in database"
-    with dpg.window(label="Info", modal=True, no_collapse=True,
-                    tag=USER_NOT_IN_DATABASE_WINDOW_TAG, width=300, height=100):
-        dpg.add_text(msg)
-        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
-        dpg.set_item_pos(USER_NOT_IN_DATABASE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
-
-    with dpg.item_handler_registry(tag=USER_NOT_IN_DATABASE_HANDLER_TAG):
-        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_NOT_IN_DATABASE_WINDOW_TAG))
-    try:
-        dpg.bind_item_handler_registry(USER_NOT_IN_DATABASE_WINDOW_TAG, USER_NOT_IN_DATABASE_HANDLER_TAG)
-    except Exception:
-        pass
-
-def _popup_user_load_result(sender, app_data, user_data):
-    if dpg.does_item_exist(USER_LOAD_RESULT_WINDOW_TAG):
-        dpg.delete_item(USER_LOAD_RESULT_WINDOW_TAG)
-    if dpg.does_item_exist(USER_LOAD_RESULT_HANDLER_TAG):
-        dpg.delete_item(USER_LOAD_RESULT_HANDLER_TAG)
-
-    if user_data[1] == False:
-        msg = f'Password for User: "{user_data[0]}" is invalid.'
-    else:
-        msg = f'Successfully logged in as User: "{user_data[0]}"'
-
-    with dpg.window(label="Info", modal=True, no_collapse=True,
-                    tag=USER_LOAD_RESULT_WINDOW_TAG, width=300, height=100):
-        dpg.add_text(msg)
-        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
-        dpg.set_item_pos(USER_LOAD_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
-
-    with dpg.item_handler_registry(tag=USER_LOAD_RESULT_HANDLER_TAG):
-        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_LOAD_RESULT_WINDOW_TAG))
-    try:
-        dpg.bind_item_handler_registry(USER_LOAD_RESULT_WINDOW_TAG, USER_LOAD_RESULT_HANDLER_TAG)
-    except Exception:
-        pass
-
 def _popup_busy_creating_user(sender, app_data, user_data):
     if dpg.does_item_exist(BUSY_CREATING_USER_WINDOW_TAG):
         dpg.delete_item(BUSY_CREATING_USER_WINDOW_TAG)
@@ -204,8 +158,6 @@ def _popup_delete_user_result(username: str, result: str):
     except Exception:
         pass
 
-
-
 def _popup_user_creation_result(username: str):
     if dpg.does_item_exist(USER_CREATION_RESULT_WINDOW_TAG):
         dpg.delete_item(USER_CREATION_RESULT_WINDOW_TAG)
@@ -226,13 +178,52 @@ def _popup_user_creation_result(username: str):
         dpg.bind_item_handler_registry(USER_CREATION_RESULT_WINDOW_TAG, USER_CREATION_RESULT_HANDLER_TAG)
     except Exception:
         pass
+# -------------------------------------(End, Pop-Ups)--------------------------------------
 
+# -----------------------------------------------------------------------------------------
+def _load_gear_buttons(username: str, list_of_gears: list):
+    if list_of_gears is not None:
+        for gear_name in list_of_gears:
+
+            button_width = 200
+            child_width = 380
+            padding = (child_width - button_width) // 2
+
+            # theme
+            with dpg.theme() as red_button_theme:
+                with dpg.theme_component(dpg.mvButton):
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))
+
+                with dpg.group(horizontal=True, parent="button_container_home_ui"):
+                    dpg.add_spacer(width=padding)
+                    dpg.add_button(
+                        label=gear_name,
+                        width=button_width,
+                        height=100,
+                        tag=gear_name,
+                        callback=lambda s, a, u: (
+                            Control._start_training_options_window(s, a, [gear_name, "home_ui_parent_window"])
+                        )
+                    )
+                    dpg.bind_item_theme(gear_name, red_button_theme)
+
+# -----------------------------------------------------------------------------------------
 #Clears gear buttons displayed on the home screen
 def _clear_gear_buttons():
     if dpg.does_item_exist("button_container_home_ui"):
         for child in (dpg.get_item_children("button_container_home_ui", 1) or []):
             dpg.delete_item(child)
 
+# -----------------------------------------------------------------------------------------
+def _nuke_gear():
+    global inputInProgress
+    if inputInProgress == True:
+        return
+    else:
+        Control._nuke_gear()
+
+# -----------------------------------------------------------------------------------------
 def _show_input_field(sender, app_data, user_data):
     global inputInProgress
 
@@ -391,47 +382,6 @@ def _show_input_field(sender, app_data, user_data):
                 Control._check_window_exists(password_tag)
             )
         )
-
-    #todo have control save username so i can then do password and only then should a load attempt be made on usualFileName with username appended that filename
-    #todo if there is a user in the database that has that password attached to them
-    #todo if the file doesnt exist popup will activate and this user doesn't exist
-    #todo Order of operations for account functionallity is, Create-Save-Load
-    #todo will need to be able to create a new user with current gear data and time data in case user doesnt make acc first
-    #todo make sure no 2 username can be the same
-
-def _load_gear_buttons(username: str, list_of_gears: list):
-    if list_of_gears is not None:
-        for gear_name in list_of_gears:
-
-            button_width = 200
-            child_width = 380
-            padding = (child_width - button_width) // 2
-
-            # theme
-            with dpg.theme() as red_button_theme:
-                with dpg.theme_component(dpg.mvButton):
-                    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))
-                    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))
-
-                with dpg.group(horizontal=True, parent="button_container_home_ui"):
-                    dpg.add_spacer(width=padding)
-                    dpg.add_button(
-                        label=gear_name,
-                        width=button_width,
-                        height=100,
-                        tag=gear_name,
-                        callback=lambda s, a, u: (
-                            Control._start_training_options_window(s, a, [gear_name, "home_ui_parent_window"])
-                        )
-                    )
-                    dpg.bind_item_theme(gear_name, red_button_theme)
-
-def _nuke_gear():
-    global inputInProgress
-    if inputInProgress == True:
-        return
-    else:
-        Control._nuke_gear()
 
 # -----------------------------------------------------------------------------------------
 def _create_homeUI():

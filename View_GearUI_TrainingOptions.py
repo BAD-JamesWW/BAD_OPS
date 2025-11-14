@@ -5,15 +5,16 @@
 # Unauthorized use, reproduction, or distribution is prohibited and may violate
 # copyright, trademark, and unfair competition laws.
 
-
+# -----------------------------------------------------------------------------------------
 import dearpygui.dearpygui as dpg
-import View_GearUI_TrainingOptions_Train
 import View_GearUI_TrainingOptions_Track
 import Control
 
+# -----------------------------------------------------------------------------------------
 GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
 GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
 
+# -----------------------------------------------------------------------------------------
 def _popup_generic_message(msg: str):
     if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
         dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
@@ -33,6 +34,7 @@ def _popup_generic_message(msg: str):
     except Exception:
         pass
 
+# -----------------------------------------------------------------------------------------
 def start(sender, app_data, user_data):
     gear = user_data[0]
     previous_window_tag = user_data[1]

@@ -7,17 +7,20 @@
 
 
 #Description: Responsible for controlling the flow of the program.
+
+# -----------------------------------------------------------------------------------------
 import View_HomeUI
 import View_GearUI_TrainingOptions
 import Model
-import View_GearUI_TrainingOptions_Track
 import View_GearUI_TrainingOptions_Train
 import dearpygui.dearpygui as dpg
 import pygame
 import os
 
+# -----------------------------------------------------------------------------------------
 pygame.mixer.init()
 
+# -----------------------------------------------------------------------------------------
 gears = dict()
 is_user_logged_in = False
 username_of_user_logged_in = ""
@@ -28,9 +31,11 @@ def main():
     View_HomeUI._run_home_ui()
     View_HomeUI._create_homeUI()
 
+# -----------------------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
 
+# -----------------------------------------------------------------------------------------
 def play_sound(filename, wait=True):
     path = os.path.abspath(filename)
     if not os.path.isfile(path) or os.path.getsize(path) == 0:
@@ -45,19 +50,28 @@ def play_sound(filename, wait=True):
     except Exception as e:
         print("Audio playback failed:", e)
 
+# -----------------------------------------------------------------------------------------
 def _show_window(previous_window_tag):
     dpg.show_item(previous_window_tag)
 
+# -----------------------------------------------------------------------------------------
 def _hide_window(previous_window_tag):
     dpg.hide_item(previous_window_tag)
 
+# -----------------------------------------------------------------------------------------
 def _delete_window(window_tag):
     dpg.delete_item(window_tag)
 
+# -----------------------------------------------------------------------------------------
 def _check_window_exists(window_tag):
     if dpg.does_item_exist(window_tag):
         dpg.delete_item(window_tag)
 
+# -----------------------------------------------------------------------------------------
+def _start_training_options_window(sender, appdata, user_data):
+    View_GearUI_TrainingOptions.start(sender, appdata, user_data)
+
+# -----------------------------------------------------------------------------------------
 def _show_training_options_train_window(sender, appdata, user_data):
     global is_user_logged_in, username_of_user_logged_in
 
@@ -66,9 +80,7 @@ def _show_training_options_train_window(sender, appdata, user_data):
     else:
         View_GearUI_TrainingOptions._popup_generic_message("User must be logged in to train \ndeployment speed.")
 
-def _start_training_options_window(sender, appdata, user_data):
-    View_GearUI_TrainingOptions.start(sender, appdata, user_data)
-
+# -----------------------------------------------------------------------------------------
 def _add_gear(gear_name: str, input_tag: str):
     global is_user_logged_in, username_of_user_logged_in
     View_HomeUI.inputInProgress = False
@@ -111,6 +123,7 @@ def _add_gear(gear_name: str, input_tag: str):
         View_HomeUI._popup_add_gear_failed(isInputEmpty=False)
         dpg.set_value(input_tag, "")
 
+# -----------------------------------------------------------------------------------------
 def _remove_gear(sender, app_data, user_data):
     global is_user_logged_in, username_of_user_logged_in
     View_HomeUI.inputInProgress = False
@@ -134,6 +147,7 @@ def _remove_gear(sender, app_data, user_data):
     else:
         dpg.show_item(input_tag)
 
+# -----------------------------------------------------------------------------------------
 def _nuke_gear():
     global is_user_logged_in, username_of_user_logged_in
     if dpg.does_item_exist("nuke_confirm_window"):
@@ -162,9 +176,11 @@ def _nuke_gear():
             dpg.add_button(label="Yes", width=75, callback=_confirm)
             dpg.add_button(label="No", width=75, callback=_cancel)
 
+# -----------------------------------------------------------------------------------------
 def _save_deployment_gear_score(score: int, gear_name: str):
     Model.save_deployment_gear_score(score = score, gear_name = gear_name, username = username_of_user_logged_in)
 
+# -----------------------------------------------------------------------------------------
 def get_sorted_deployment_scores(key_name: str) -> list:
     global is_user_logged_in, username_of_user_logged_in
 
@@ -174,6 +190,7 @@ def get_sorted_deployment_scores(key_name: str) -> list:
 
     return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
 
+# -----------------------------------------------------------------------------------------
 def _logout_user():
     global is_user_logged_in, username_of_user_logged_in
 
@@ -187,37 +204,7 @@ def _logout_user():
     #Change header text of HomeUI
     dpg.set_value("homescreen_header_text", "Gear")
 
-
-def _load_user_data(sender, app_data, user_data):
-    global is_user_logged_in, username_of_user_logged_in
-
-    if is_user_logged_in == True and username_of_user_logged_in != "":
-        View_HomeUI._popup_generic_message("You must be logged out to login to \nan account")
-        return
-
-    #todo check if password is correct for user and if not return with popup
-    result = Model._verify_user_password(sender, app_data, user_data)
-    username = result[0]
-    login_result = result[1]
-
-    if result == "User not in database":
-        View_HomeUI._popup_user_not_in_database(sender, app_data, user_data)
-        return
-    else:
-        View_HomeUI._clear_gear_buttons()
-        View_HomeUI._popup_user_load_result(sender, app_data, [username, login_result])
-
-    #todo if get here, just pass username to model and model will append name to file name and attempt a load, if that load fails that func will initiate a popup
-    if result[1] == True:
-        is_user_logged_in = True
-        username_of_user_logged_in = username
-        dpg.set_value("homescreen_header_text", f"Gear for {username}")
-        list_of_gears = Model.load_deployment_gear(username)
-        if list_of_gears is not None:
-            View_HomeUI._load_gear_buttons(username, list_of_gears)
-
-#todo user logout and maybe change load user data to login user or something and dont forget login status
-
+# -----------------------------------------------------------------------------------------
 def _create_user_data(sender, app_data, user_data):
     global is_user_logged_in, username_of_user_logged_in
 
@@ -250,6 +237,7 @@ def _create_user_data(sender, app_data, user_data):
     elif result == "Creation Successful":
         View_HomeUI._popup_user_creation_result(dpg.get_value(user_data[1]))
 
+# -----------------------------------------------------------------------------------------
 def _delete_user_data(sender, app_data, user_data):
     global is_user_logged_in, username_of_user_logged_in
 
@@ -270,4 +258,31 @@ def _delete_user_data(sender, app_data, user_data):
     #So homescreen header text changes back to default
     dpg.set_value("homescreen_header_text", View_HomeUI.homescreen_header_default_text)
 
-    #todo clear and reset homeUI and load default
+# -----------------------------------------------------------------------------------------
+def _load_user_data(sender, app_data, user_data):
+    global is_user_logged_in, username_of_user_logged_in
+
+    if is_user_logged_in == True and username_of_user_logged_in != "":
+        View_HomeUI._popup_generic_message("You must be logged out to login to \nan account")
+        return
+
+    result = Model._verify_user_password(sender, app_data, user_data)
+    username = result[0]
+    login_result = result[1]
+
+    if result == "User not in database":
+        View_HomeUI._popup_generic_message(f"User: {username} not in database")
+        return
+
+    elif login_result == False:
+        View_HomeUI._popup_generic_message(f'Password for User: "{username}" is invalid.')
+
+    elif login_result == True:
+        View_HomeUI._clear_gear_buttons()
+        is_user_logged_in = True
+        username_of_user_logged_in = username
+        dpg.set_value("homescreen_header_text", f"Gear for {username}")
+        list_of_gears = Model.load_deployment_gear(username)
+        if list_of_gears is not None:
+            View_HomeUI._load_gear_buttons(username, list_of_gears)
+        View_HomeUI._popup_generic_message(f'Successfully logged in as User: "{username}"')
