@@ -5,13 +5,36 @@
 # Unauthorized use, reproduction, or distribution is prohibited and may violate
 # copyright, trademark, and unfair competition laws.
 
-
+# -----------------------------------------------------------------------------------------
 import dearpygui.dearpygui as dpg
-import View_GearUI_TrainingOptions_Train
 import View_GearUI_TrainingOptions_Track
 import Control
 
+# -----------------------------------------------------------------------------------------
+GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
+GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
 
+# -----------------------------------------------------------------------------------------
+def _popup_generic_message(msg: str):
+    if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
+    if dpg.does_item_exist(GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_HANDLER_TAG)
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=GENERIC_MESSAGE_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(GENERIC_MESSAGE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(GENERIC_MESSAGE_WINDOW_TAG, GENERIC_MESSAGE_HANDLER_TAG)
+    except Exception:
+        pass
+
+# -----------------------------------------------------------------------------------------
 def start(sender, app_data, user_data):
     gear = user_data[0]
     previous_window_tag = user_data[1]
@@ -54,5 +77,5 @@ def start(sender, app_data, user_data):
                 dpg.bind_item_theme("performance_tracking_button", red_button_theme)           
         with dpg.group(horizontal=True):
                 dpg.add_spacer(width=padding)
-                dpg.add_button(label="Train",tag = "train_button", callback=View_GearUI_TrainingOptions_Train.show_timer, width=button_width, height=100, user_data=[gear,window_tag])
+                dpg.add_button(label="Train",tag = "train_button", callback=lambda s, a, u: Control._show_training_options_train_window(s, a, [gear, window_tag]), width=button_width, height=100)
                 dpg.bind_item_theme("train_button", red_button_theme)

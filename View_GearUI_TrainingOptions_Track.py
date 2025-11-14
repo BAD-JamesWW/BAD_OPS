@@ -10,6 +10,7 @@ import dearpygui.dearpygui as dpg
 import Model
 import Control
 
+
 def time_to_milliseconds(time_str):
     if time_str.count(":") != 2 or "." not in time_str:
         raise ValueError(f"Invalid time format: {time_str}")
@@ -40,7 +41,7 @@ def show_training_graph(sender=None, app_data=None, user_data=None):
     annotation_tags.clear()  # Reset when graph is refreshed
 
     gear = user_data
-    training_data = Model.get_sorted_times_by_key(gear)
+    training_data = Control.get_sorted_deployment_scores(gear)
 
     if len(training_data) == 0:
         return

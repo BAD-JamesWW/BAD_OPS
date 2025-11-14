@@ -53,9 +53,9 @@ def stop_timer_internal(eighty_six = False):
     global timer_running
     timer_running = False
     if not eighty_six:
-        Model.save_deployment_gear_time(dpg.get_value(timer_display_tag), gear)
+        Control._save_deployment_gear_score(dpg.get_value(timer_display_tag), gear)
     else:
-        Model.save_deployment_gear_time("EightySix", gear)
+        Control._save_deployment_gear_score("EightySix", gear)
 
 def reset_timer():
     global timer_running, elapsed_time

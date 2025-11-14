@@ -6,74 +6,63 @@
 # copyright, trademark, and unfair competition laws.
 
 
-import json
-import os
+# -----------------------------------------------------------------------------------------
 from dearpygui import dearpygui as dpg
+import bcrypt
+import hashlib
+import logging
 import json
 import os
 import Control
 
+# -----------------------------------------------------------------------------------------
 dpg.create_context()
 
-
-def save_deployment_gear(gear_name, filename="deployment_gear.json"):
-    """Saves a gear name to a JSON list if it doesn't already exist."""
-
-    gear_name = gear_name.strip()
-
-    #Load existing data and verify it's a list.
+# -----------------------------------------------------------------------------------------
+# Deletes previous log file and creates a new one.
+def _initiate_log_file():
+    filename = "app.log"
     if os.path.exists(filename):
+        os.remove(filename)
+    logging.basicConfig(
+        filename=filename,
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s"
+    )
+
+# -----------------------------------------------------------------------------------------
+# Saves a gear name to a JSON list if it doesn't already exist.
+def save_deployment_gear(gear_name, username: str):
+    deployment_gear_file = f"{username}_deployment_gear.json"
+
+    #Load existing data or create new data
+    if os.path.exists(deployment_gear_file):
         try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-            if not isinstance(data, list):
-                print(f"[Error] Data in {filename} is not a list.")
+            with open(deployment_gear_file, 'r') as f:
+                data_for_deployment_gear = json.load(f)
+            if not isinstance(data_for_deployment_gear, list):
+                print(f"[Error] Data in {deployment_gear_file} is not a list.")
                 return
         except json.JSONDecodeError:
-            print(f"[Error] Failed to decode JSON in {filename}.")
+            print(f"[Error] Failed to decode JSON in {deployment_gear_file}.")
             return
     #Create new list data
     else:
-        data = []
+        data_for_deployment_gear = []
 
-    #Saves new gear if it doesn't already exist.
-    if gear_name not in data:
-        data.append(gear_name)
-        with open(filename, 'w') as f:
-            json.dump(data, f, indent=4)
+    #Check for existence
+    if gear_name not in data_for_deployment_gear:
+        data_for_deployment_gear.append(gear_name)
 
+        #Save updated list back to file
+        with open(deployment_gear_file, 'w') as f:
+            json.dump(data_for_deployment_gear, f, indent=4)
 
-def save_deployment_gear_time(time, gear_name, filename="deployment_scores.json"):
-    # Load existing data and verify it's a dict.
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-            if not isinstance(data, dict):
-                print(f"[Error] Data in {filename} is not a dict.")
-                return
-        except json.JSONDecodeError:
-            print(f"[Error] Failed to decode JSON in {filename}.")
-            return
-    #the scores file will be a dict of lists, so times can be easily attached to gear
-    else:
-        data = {}
+# -----------------------------------------------------------------------------------------
+# Loads and returns a list of gear names from a JSON file. Returns None if file missing or empty.
+def load_deployment_gear(username: str):
+    filename = f"{username}_deployment_gear.json"
 
-    #In case the scores file doesn't have the gear in its dict
-    if gear_name not in data:
-        data[gear_name] = []
-
-    #Append new list data, to the dict key of gear_name
-    data[gear_name].append(time)
-
-    #Update file data
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-
-def load_deployment_gear(filename="deployment_gear.json"):
-    """Loads and returns a list of gear names from a JSON file. Returns None if file missing or empty."""
     if not os.path.exists(filename):
         return None
 
@@ -88,37 +77,10 @@ def load_deployment_gear(filename="deployment_gear.json"):
         print(f"[Error] Failed to decode JSON in: {filename}")
         return None
 
-
-def delete_deployment_gear_time(gear_name, filename="deployment_scores.json"):
-    #Check if the file exists
-    if not os.path.exists(filename):
-        print("No data file found.")
-        return
-
-    #Load the existing data file
-    try:
-        with open(filename, 'r') as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            print(f"[Error] Data in {filename} is not a dict.")
-            return
-    except json.JSONDecodeError:
-        print(f"[Error] Failed to decode JSON in {filename}.")
-        return
-
-    #Delete chosen gear in data file
-    if gear_name in data:
-        del data[gear_name]
-    else:
-        return
-
-    #Update data file
-    with open(filename, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
-    """Deletes a specific gear entry from a JSON list file."""
+# -----------------------------------------------------------------------------------------
+# Deletes a specific gear entry from a JSON list file.
+def delete_deployment_gear(gear_name, username: str):
+    filename = f"{username}_deployment_gear.json"
 
     # Check if the file exists
     if not os.path.exists(filename):
@@ -148,9 +110,53 @@ def delete_deployment_gear(gear_name, filename="deployment_gear.json"):
     else:
         print(f"[Warning] Gear '{gear_name}' not found in file.")
 
+# -----------------------------------------------------------------------------------------
+def save_deployment_gear_score(score: int, gear_name: str, username: str):
+    filename = f"{username}_deployment_scores.json"
+    # Step 1: Load existing data (or create empty structure if file doesn't exist)
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
+            data = json.load(f)
+    else:
+        data = {}
 
-def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.json") -> list:
-    #Nested func. to convert time to ms.
+    # Step 2: Append to the list for the given gear_name
+    if gear_name not in data:
+        data[gear_name] = []
+
+    data[gear_name].append(score)
+
+    # Step 3: Write the updated data back to file
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
+
+# -----------------------------------------------------------------------------------------
+def delete_deployment_gear_scores(gear_name, username: str):
+    filename = f"{username}_deployment_times.json"
+
+    # Step 1: Check if the file exists
+    if not os.path.exists(filename):
+        print("No data file found.")
+        return
+
+    # Step 2: Load the existing data
+    with open(filename, "r") as f:
+        data = json.load(f)
+
+    # Step 3: Check if gear_name exists
+    if gear_name in data:
+        del data[gear_name]
+    else:
+        return
+
+    # Step 4: Save updated data back to file
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
+
+# -----------------------------------------------------------------------------------------
+def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
+    filename = f"{username}_deployment_scores.json"
+
     def time_to_milliseconds(time_str):
         hours, minutes, rest = time_str.split(':')
         seconds, millis = rest.split('.')
@@ -164,7 +170,7 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
 
     #Attempt to load data file & return empty list of fail.
     try:
-        with open(file_path, 'r') as file:
+        with open(filename, 'r') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Error loading JSON: {e}")
@@ -198,4 +204,95 @@ def get_sorted_times_by_key(key_name: str, file_path: str = "deployment_scores.j
 
     return result
 
+# -----------------------------------------------------------------------------------------
+def create_user_data_files(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    password = dpg.get_value(user_data[2])
+    account_database_file = "account_database"
+
+    #Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
+            data_for_accounts = json.load(f)
+    else:
+        data_for_accounts = {}
+
+    #Hash user data
+    salt = bcrypt.gensalt()
+    hashed_and_salted_password = bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
+
+    #Checks if username already exists.
+    if hashed_username in data_for_accounts:
+        return "Already exists"
+
+    #Create user
+    data_for_accounts[hashed_username] = []
+
+    #Append password to corresponding user
+    data_for_accounts[hashed_username].append(hashed_and_salted_password)
+
+    #Append user to account database file
+    with open(account_database_file, "w") as f:
+        json.dump(data_for_accounts, f, indent=4)
+
+    return "Creation Successful"
+
+# -----------------------------------------------------------------------------------------
+def _delete_user_data_files(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    account_database_file = "account_database"
+
+    #Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
+            data_for_accounts = json.load(f)
+    else:
+        return "Does not exist" #Because user doesn't exist if account database doesn't exist
+
+    #Hash user data
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
+
+    #Checks if username already exists.
+    if hashed_username in data_for_accounts:
+        del data_for_accounts[hashed_username]
+        with open(account_database_file, "w") as f:
+            json.dump(data_for_accounts, f, indent=4)
+        deployment_gear_file = f"{username}_deployment_gear.json"
+        deployment_gear_scores_file = f"{username}_deployment_gear_scores.json"
+        try:
+            os.remove(deployment_gear_file)
+        except FileNotFoundError:
+            logging.info(f"deployment gear file for user {username} not found")
+        try:
+            os.remove(deployment_gear_scores_file)
+        except FileNotFoundError:
+            logging.info(f"deployment gear times file for user {username} not found")
+    else:
+        return "Does not exist"
+
+# -----------------------------------------------------------------------------------------
+def _verify_user_password(sender, app_data, user_data):
+    username = dpg.get_value(user_data[1])
+    hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
+    password = dpg.get_value(user_data[2])
+    account_database_file = "account_database"
+
+    # Read in or create account database file
+    if os.path.exists(account_database_file):
+        with open(account_database_file, "r") as f:
+            data_for_accounts = json.load(f)
+    else:
+        return "User not in database"
+
+    #check if user exists in database
+    if hashed_username not in data_for_accounts:
+        return "User not in database"
+
+    #check password
+    result = False
+    if data_for_accounts is not None:
+        password_of_hashed_username = data_for_accounts.get(hashed_username, ["<missing>"])[0]
+        result = bcrypt.checkpw(password.encode("utf-8"), password_of_hashed_username.encode("utf-8"))
+    return [username,result]
 

@@ -5,21 +5,52 @@
 # Unauthorized use, reproduction, or distribution is prohibited and may violate
 # copyright, trademark, and unfair competition laws.
 
-
 # Description: Responsible for the Home UI as a whole.
+
+# -----------------------------------------------------------------------------------------
 from dearpygui import dearpygui as dpg
-import Model
 import Control
 
-
+# -----------------------------------------------------------------------------------------
 dpg.create_context()
 
+# -----------------------------------------------------------------------------------------
 inputInProgress = False
+homescreen_header_default_text = "Gear"
 NON_EXISTENT_GEAR_WINDOW_TAG = "non_existent_category_window"
 NON_EXISTENT_GEAR_HANDLER_TAG = "non_existent_category_handler"
 ALREADY_EXISTENT_GEAR_WINDOW_TAG = "already_existent_category_window"
 ALREADY_EXISTENT_GEAR_HANDLER_TAG = "already_existent_category_handler"
+ALREADY_EXISTENT_USER_WINDOW_TAG = "already_existent_user_window"
+ALREADY_EXISTENT_USER_HANDLER_TAG = "already_existent_user_handler"
+USER_DELETION_RESULT_WINDOW_TAG = "user_deletion_result_window"
+USER_DELETION_RESULT_HANDLER_TAG = "user_deletion_result_handler"
+USER_CREATION_RESULT_WINDOW_TAG = "user_creation_result_window"
+USER_CREATION_RESULT_HANDLER_TAG = "user_creation_result_handler"
+BUSY_CREATING_USER_WINDOW_TAG = "busy_creating_user_window"
+BUSY_DELETING_USER_WINDOW_TAG = "busy_deleting_user_window"
+GENERIC_MESSAGE_WINDOW_TAG = "generic_message_window"
+GENERIC_MESSAGE_HANDLER_TAG = "generic_message_handler"
 
+# -------------------------------------(Start Pop-Ups)-------------------------------------
+def _popup_generic_message(msg: str):
+    if dpg.does_item_exist(GENERIC_MESSAGE_WINDOW_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG)
+    if dpg.does_item_exist(GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.delete_item(GENERIC_MESSAGE_HANDLER_TAG)
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=GENERIC_MESSAGE_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(GENERIC_MESSAGE_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=GENERIC_MESSAGE_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(GENERIC_MESSAGE_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(GENERIC_MESSAGE_WINDOW_TAG, GENERIC_MESSAGE_HANDLER_TAG)
+    except Exception:
+        pass
 
 def _popup_remove_gear_failed(isInputEmpty):
     if dpg.does_item_exist(NON_EXISTENT_GEAR_WINDOW_TAG):
@@ -28,7 +59,7 @@ def _popup_remove_gear_failed(isInputEmpty):
         dpg.delete_item(NON_EXISTENT_GEAR_HANDLER_TAG)
 
     msg = "Please enter valid input" if isInputEmpty else "Gear Doesn't exist"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=NON_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -48,7 +79,7 @@ def _popup_add_gear_failed(isInputEmpty):
         dpg.delete_item(ALREADY_EXISTENT_GEAR_HANDLER_TAG)
 
     msg = "Enter a valid gear name" if isInputEmpty else "Gear Already Exists"
-    with dpg.window(label=msg, modal=True, no_collapse=True,
+    with dpg.window(label="Info", modal=True, no_collapse=True,
                     tag=ALREADY_EXISTENT_GEAR_WINDOW_TAG, width=300, height=100):
         dpg.add_text(msg)
         vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
@@ -61,7 +92,138 @@ def _popup_add_gear_failed(isInputEmpty):
     except Exception:
         pass
 
+def _popup_create_user_failed(sender, app_data, user_data):
+    if dpg.does_item_exist(ALREADY_EXISTENT_USER_WINDOW_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_USER_WINDOW_TAG)
+    if dpg.does_item_exist(ALREADY_EXISTENT_USER_HANDLER_TAG):
+        dpg.delete_item(ALREADY_EXISTENT_USER_HANDLER_TAG)
 
+    msg = f"User: {dpg.get_value(user_data[1])} already exists"
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=ALREADY_EXISTENT_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(ALREADY_EXISTENT_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=ALREADY_EXISTENT_USER_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(ALREADY_EXISTENT_USER_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(ALREADY_EXISTENT_USER_WINDOW_TAG, ALREADY_EXISTENT_USER_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_busy_creating_user(sender, app_data, user_data):
+    if dpg.does_item_exist(BUSY_CREATING_USER_WINDOW_TAG):
+        dpg.delete_item(BUSY_CREATING_USER_WINDOW_TAG)
+
+    msg = f" Creating data for User: {dpg.get_value(user_data[1])}..."
+    with dpg.window(label="Info", modal=True, no_collapse=True, no_close=True,
+                    tag=BUSY_CREATING_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(BUSY_CREATING_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+def _popup_busy_deleting_user(sender, app_data, user_data):
+    if dpg.does_item_exist(BUSY_DELETING_USER_WINDOW_TAG):
+        dpg.delete_item(BUSY_DELETING_USER_WINDOW_TAG)
+
+    msg = f"Deleting data for User: {dpg.get_value(user_data[1])}..."
+    with dpg.window(label="Info", modal=True, no_collapse=True, no_close=True,
+                    tag=BUSY_DELETING_USER_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(BUSY_DELETING_USER_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+def _popup_delete_user_result(username: str, result: str):
+    if dpg.does_item_exist(USER_DELETION_RESULT_WINDOW_TAG):
+        dpg.delete_item(USER_DELETION_RESULT_WINDOW_TAG)
+    if dpg.does_item_exist(USER_DELETION_RESULT_HANDLER_TAG):
+        dpg.delete_item(USER_DELETION_RESULT_HANDLER_TAG)
+
+    if result == "Does not exist":
+        msg = f"User: {username} doesn't exist"
+    else:
+        msg = f"User: {username} successfully derezzed"
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=USER_DELETION_RESULT_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_DELETION_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_DELETION_RESULT_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_DELETION_RESULT_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_DELETION_RESULT_WINDOW_TAG, USER_DELETION_RESULT_HANDLER_TAG)
+    except Exception:
+        pass
+
+def _popup_user_creation_result(username: str):
+    if dpg.does_item_exist(USER_CREATION_RESULT_WINDOW_TAG):
+        dpg.delete_item(USER_CREATION_RESULT_WINDOW_TAG)
+    if dpg.does_item_exist(USER_CREATION_RESULT_HANDLER_TAG):
+        dpg.delete_item(USER_CREATION_RESULT_HANDLER_TAG)
+
+    msg = f"Identity diskspace allocated - \nUser: {username} brought online."
+
+    with dpg.window(label="Info", modal=True, no_collapse=True,
+                    tag=USER_CREATION_RESULT_WINDOW_TAG, width=300, height=100):
+        dpg.add_text(msg)
+        vw, vh = dpg.get_viewport_client_width(), dpg.get_viewport_client_height()
+        dpg.set_item_pos(USER_CREATION_RESULT_WINDOW_TAG, [vw // 2 - 150, vh // 2 - 50])
+
+    with dpg.item_handler_registry(tag=USER_CREATION_RESULT_HANDLER_TAG):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: dpg.delete_item(USER_CREATION_RESULT_WINDOW_TAG))
+    try:
+        dpg.bind_item_handler_registry(USER_CREATION_RESULT_WINDOW_TAG, USER_CREATION_RESULT_HANDLER_TAG)
+    except Exception:
+        pass
+# -------------------------------------(End, Pop-Ups)--------------------------------------
+
+# -----------------------------------------------------------------------------------------
+def _load_gear_buttons(username: str, list_of_gears: list):
+    if list_of_gears is not None:
+        for gear_name in list_of_gears:
+
+            button_width = 200
+            child_width = 380
+            padding = (child_width - button_width) // 2
+
+            # theme
+            with dpg.theme() as red_button_theme:
+                with dpg.theme_component(dpg.mvButton):
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))
+                    dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))
+
+                with dpg.group(horizontal=True, parent="button_container_home_ui"):
+                    dpg.add_spacer(width=padding)
+                    dpg.add_button(
+                        label=gear_name,
+                        width=button_width,
+                        height=100,
+                        tag=gear_name,
+                        callback=lambda s, a, u: (
+                            Control._start_training_options_window(s, a, [gear_name, "home_ui_parent_window"])
+                        )
+                    )
+                    dpg.bind_item_theme(gear_name, red_button_theme)
+
+# -----------------------------------------------------------------------------------------
+#Clears gear buttons displayed on the home screen
+def _clear_gear_buttons():
+    if dpg.does_item_exist("button_container_home_ui"):
+        for child in (dpg.get_item_children("button_container_home_ui", 1) or []):
+            dpg.delete_item(child)
+
+# -----------------------------------------------------------------------------------------
+def _nuke_gear():
+    global inputInProgress
+    if inputInProgress == True:
+        return
+    else:
+        Control._nuke_gear()
+
+# -----------------------------------------------------------------------------------------
 def _show_input_field(sender, app_data, user_data):
     global inputInProgress
 
@@ -71,6 +233,13 @@ def _show_input_field(sender, app_data, user_data):
     
     button_container = user_data[0]
     fieldType = user_data[1]
+
+    #To allow extra situational data to be passed through a call
+    try:
+        extra_data_slot_01 = user_data[2]
+    except IndexError:
+        extra_data_slot_01 = None
+
     input_tag = f"gear_input_field_{fieldType}"
 
     # Remove old input field if it exists
@@ -87,26 +256,132 @@ def _show_input_field(sender, app_data, user_data):
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            label="Enter gear name:",
+            hint="Enter gear name (Edge spaces ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=Control._add_gear,
-            user_data=[button_container, input_tag, "home_ui_parent_window"]
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._add_gear(dpg.get_value(input_tag).strip(), input_tag.strip()),
+            )
         )
 
     elif fieldType == "remove":
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            label="Enter gear name:",
+            hint="Enter gear name (Edge spaces ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
-            callback=Control._remove_gear,
-            user_data=[button_container, input_tag]
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            Control._remove_gear(s, a, [button_container, input_tag.strip()])
+            )
         )
 
+    elif fieldType == "user_create":
+        username_tag = "create_username"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter username (Edge spaces ignored):",
+            tag=username_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            dpg.hide_item(username_tag), #So user can't break program flow by changing the entered username
+            _show_input_field(s, a, [button_container, "password_create", username_tag.strip()])
+            )
+        )
+
+    elif fieldType == "user_delete":
+        username_to_delete_tag = "username_to_delete"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter username to delete (Edge spaces ignored):",
+            tag=username_to_delete_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            Control._delete_user_data(sender, app_data, [button_container, username_to_delete_tag.strip()]),
+
+            #So input field is properly deleted after use
+            Control._check_window_exists(username_to_delete_tag)
+            )
+        )
+
+    elif fieldType == "user_to_load":
+        username_to_load_tag = "username_to_load_tag"
+
+        # Username input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter username to login (Edge spaces ignored):",
+            tag=username_to_load_tag,
+            before=before_tag,
+            on_enter=True,
+            callback=lambda s, a, u: (
+            globals().__setitem__("inputInProgress", False),
+            dpg.hide_item(username_to_load_tag), #So user can't break program flow by changing the entered username
+            _show_input_field(s, a, [button_container, "user_to_load_password", username_to_load_tag.strip()])
+            )
+        )
+
+    elif fieldType == "user_to_load_password":
+        if extra_data_slot_01 is None:
+            return
+
+        user_to_load_password_tag = "user_to_load_password"
+        user_to_load_username = extra_data_slot_01
+
+        # Password input
+        dpg.add_input_text(
+            parent=button_container,
+            hint=f"Enter password for {dpg.get_value(extra_data_slot_01)}:",
+            tag=user_to_load_password_tag,
+            before=before_tag,
+            password=True,  # Mask input
+            on_enter=True,  # Hitting Enter here triggers callback
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._load_user_data(s, a, [button_container, user_to_load_username, user_to_load_password_tag, "home_ui_parent_window"]),
+
+                # So input fields for username & password are properly deleted
+                Control._check_window_exists(user_to_load_username),
+                Control._check_window_exists(user_to_load_password_tag)
+            )
+        )
+
+    elif fieldType == "password_create":
+        if extra_data_slot_01 is None:
+            return
+
+        password_tag = "create_password"
+        username_tag = extra_data_slot_01
+
+        # Password input
+        dpg.add_input_text(
+            parent=button_container,
+            hint="Enter password (Spaces are prohibited):",
+            tag=password_tag,
+            before=before_tag,
+            password=True,  # Mask input
+            on_enter=True,  # Hitting Enter here triggers callback
+            callback=lambda s, a, u: (
+                globals().__setitem__("inputInProgress", False),
+                Control._create_user_data(s, a, [button_container, username_tag, password_tag, "home_ui_parent_window"]),
+
+                # So input fields for username & password are properly deleted
+                Control._check_window_exists(username_tag),
+                Control._check_window_exists(password_tag)
+            )
+        )
 
 # -----------------------------------------------------------------------------------------
 def _create_homeUI():
@@ -153,10 +428,10 @@ def _create_homeUI():
 
                 with dpg.group(horizontal=True):
                     dpg.add_spacer(width=150)
-                    dpg.add_text("Gear")
+                    dpg.add_text(homescreen_header_default_text, tag="homescreen_header_text")
 
 
-                button_container = dpg.add_child_window(width=-1, height=-1, border=False)
+                button_container = dpg.add_child_window(width=-1, height=-1, border=False, tag="button_container_home_ui")
 
             # === Right Pane ===
             with dpg.child_window(width=150, height=400, border=False, tag="tag_right_pane"):
@@ -165,6 +440,21 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
+                    logout_account_btn = dpg.add_button(label="Logout", callback=Control._logout_user)
+                    dpg.bind_item_theme(logout_account_btn, red_button_theme)
+
+                    load_account_btn = dpg.add_button(label="Login", callback=_show_input_field,
+                                                        user_data=[button_container, "user_to_load"])
+                    dpg.bind_item_theme(load_account_btn, red_button_theme)
+
+                    delete_account_btn = dpg.add_button(label="- Acc.", callback=_show_input_field,
+                                                        user_data=[button_container, "user_delete"])
+                    dpg.bind_item_theme(delete_account_btn, red_button_theme)
+
+                    create_account_btn = dpg.add_button(label="+ Acc.", callback=_show_input_field,
+                                              user_data=[button_container, "user_create"])
+                    dpg.bind_item_theme(create_account_btn, red_button_theme)
+
                     plus_btn = dpg.add_button(label="Add", callback=_show_input_field,
                                               user_data=[button_container,"add"])
                     dpg.bind_item_theme(plus_btn, red_button_theme)
@@ -173,22 +463,16 @@ def _create_homeUI():
                                                user_data=[button_container,"remove"])
                     dpg.bind_item_theme(minus_btn, red_button_theme)
 
-                    exclaim_btn = dpg.add_button(label="Nuke", callback=Control._nuke_gear)
+                    exclaim_btn = dpg.add_button(label="Nuke", callback=_nuke_gear)
                     dpg.bind_item_theme(exclaim_btn, red_button_theme)
 
-                savedGear = Model.load_deployment_gear()
-                if savedGear:
-                    for gearName in savedGear:
-                        gear_input_tag = dpg.generate_uuid()
-                        dpg.add_input_text(default_value=gearName, tag=gear_input_tag)
-                        Control._add_gear(None, None, [button_container, gear_input_tag, "home_ui_parent_window", True])
-
 # -----------------------------------------------------------------------------------------
-dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)
-_create_homeUI()
-dpg.set_viewport_small_icon("assets/images/CompanyLogo.ico")
-dpg.set_viewport_large_icon("assets/images/CompanyLogo.ico")
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.start_dearpygui()
-dpg.destroy_context()
+def _run_home_ui():
+    dpg.create_viewport(title="(O.P.S.) Operational Preparedness System", width=461, height=600, resizable=False)
+    _create_homeUI()
+    dpg.set_viewport_small_icon("assets/images/CompanyLogo.ico")
+    dpg.set_viewport_large_icon("assets/images/CompanyLogo.ico")
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()
