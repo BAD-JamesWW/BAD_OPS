@@ -256,7 +256,7 @@ def _show_input_field(sender, app_data, user_data):
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter gear name (Leading and trailing spaces are ignored):",
+            hint="Enter gear name (Edge spaces ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
@@ -270,7 +270,7 @@ def _show_input_field(sender, app_data, user_data):
         Control.play_sound("assets/audio/ui_sound_03.wav", wait=False)
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter gear name (Leading and trailing spaces are ignored):",
+            hint="Enter gear name (Edge spaces ignored):",
             tag=input_tag,
             before=before_tag,
             on_enter=True,
@@ -286,7 +286,7 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter username (Leading and trailing spaces are ignored):",
+            hint="Enter username (Edge spaces ignored):",
             tag=username_tag,
             before=before_tag,
             on_enter=True,
@@ -303,7 +303,7 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter username to delete (Leading and trailing spaces are ignored):",
+            hint="Enter username to delete (Edge spaces ignored):",
             tag=username_to_delete_tag,
             before=before_tag,
             on_enter=True,
@@ -322,7 +322,7 @@ def _show_input_field(sender, app_data, user_data):
         # Username input
         dpg.add_input_text(
             parent=button_container,
-            hint="Enter name of user to load (Leading and trailing spaces are ignored):",
+            hint="Enter username to login (Edge spaces ignored):",
             tag=username_to_load_tag,
             before=before_tag,
             on_enter=True,
@@ -440,18 +440,18 @@ def _create_homeUI():
                 dpg.add_spacer(height=280)
 
                 with dpg.group(horizontal=False):
-                    logout_account_btn = dpg.add_button(label="LO User", callback=Control._logout_user)
+                    logout_account_btn = dpg.add_button(label="Logout", callback=Control._logout_user)
                     dpg.bind_item_theme(logout_account_btn, red_button_theme)
 
-                    load_account_btn = dpg.add_button(label="L User", callback=_show_input_field,
+                    load_account_btn = dpg.add_button(label="Login", callback=_show_input_field,
                                                         user_data=[button_container, "user_to_load"])
                     dpg.bind_item_theme(load_account_btn, red_button_theme)
 
-                    delete_account_btn = dpg.add_button(label="- User", callback=_show_input_field,
+                    delete_account_btn = dpg.add_button(label="- Acc.", callback=_show_input_field,
                                                         user_data=[button_container, "user_delete"])
                     dpg.bind_item_theme(delete_account_btn, red_button_theme)
 
-                    create_account_btn = dpg.add_button(label="+ User", callback=_show_input_field,
+                    create_account_btn = dpg.add_button(label="+ Acc.", callback=_show_input_field,
                                               user_data=[button_container, "user_create"])
                     dpg.bind_item_theme(create_account_btn, red_button_theme)
 

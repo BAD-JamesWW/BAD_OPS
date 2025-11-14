@@ -194,15 +194,18 @@ def get_sorted_deployment_scores(key_name: str) -> list:
 def _logout_user():
     global is_user_logged_in, username_of_user_logged_in
 
-    #reset global trackers
-    is_user_logged_in = False
-    username_of_user_logged_in = ""
+    if is_user_logged_in == True and username_of_user_logged_in != "":
+        #reset global trackers
+        is_user_logged_in = False
+        username_of_user_logged_in = ""
 
-    #Remove gear buttons from home UI
-    View_HomeUI._clear_gear_buttons()
+        #Remove gear buttons from home UI
+        View_HomeUI._clear_gear_buttons()
 
-    #Change header text of HomeUI
-    dpg.set_value("homescreen_header_text", "Gear")
+        #Change header text of HomeUI
+        dpg.set_value("homescreen_header_text", "Gear")
+    else:
+        return
 
 # -----------------------------------------------------------------------------------------
 def _create_user_data(sender, app_data, user_data):
@@ -271,7 +274,7 @@ def _load_user_data(sender, app_data, user_data):
     login_result = result[1]
 
     if result == "User not in database":
-        View_HomeUI._popup_generic_message(f"User: {username} not in database")
+        View_HomeUI._popup_generic_message(f"User not in database")
         return
 
     elif login_result == False:
