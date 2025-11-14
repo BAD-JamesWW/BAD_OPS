@@ -46,6 +46,7 @@ def save_deployment_gear(gear_name, username: str):
         except json.JSONDecodeError:
             print(f"[Error] Failed to decode JSON in {deployment_gear_file}.")
             return
+    #Create new list data
     else:
         data_for_deployment_gear = []
 
@@ -167,6 +168,7 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
         )
         return total_millis
 
+    #Attempt to load data file & return empty list of fail.
     try:
         with open(filename, 'r') as file:
             data = json.load(file)
@@ -174,6 +176,7 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
         print(f"Error loading JSON: {e}")
         return []
 
+    #Display popups and return empty list if corresponding gear time doesn't exist
     if key_name not in data:
         popup_tag = "not_found_popup"
 
@@ -186,9 +189,9 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
 
         return []
 
+    # Format a list of times for corresponding gear and return it
     time_list = data[key_name]
     result = []
-
     for t in time_list:
         if isinstance(t, str) and t.strip().lower() == "eightysix":
             result.append({"original": t, "milliseconds": "EightySix"})
