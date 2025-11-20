@@ -321,7 +321,7 @@ def show_timer(sender, app_data, user_data):
 
         dpg.add_spacer(height=10)
         dpg.add_input_int(label="Repetitions (N)", default_value=1, tag="repetition_input", min_value=1)
-        dpg.add_button(label="Start Session (Voice-Controlled)", callback=start_session_callback, tag="start_session_btn")
+        dpg.add_button(label="Start Session", callback=start_session_callback, tag="start_session_btn")
         
         dpg.bind_item_theme("reset_btn", red_button_theme)
         dpg.bind_item_theme("manual_ready_btn", red_button_theme)
