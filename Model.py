@@ -33,18 +33,18 @@ def _initiate_log_file():
 # -----------------------------------------------------------------------------------------
 # Saves a gear name to a JSON list if it doesn't already exist.
 def save_deployment_gear(gear_name, username: str):
-    deployment_gear_file = f"{username}_deployment_gear.json"
+    path = os.path.abspath("user data/"+f"{username}_deployment_gear.json")
 
     #Load existing data or create new data
-    if os.path.exists(deployment_gear_file):
+    if os.path.isfile(path):
         try:
-            with open(deployment_gear_file, 'r') as f:
+            with open(path, 'r') as f:
                 data_for_deployment_gear = json.load(f)
             if not isinstance(data_for_deployment_gear, list):
-                print(f"[Error] Data in {deployment_gear_file} is not a list.")
+                print(f"[Error] Data in {path} is not a list.")
                 return
         except json.JSONDecodeError:
-            print(f"[Error] Failed to decode JSON in {deployment_gear_file}.")
+            print(f"[Error] Failed to decode JSON in {path}.")
             return
     #Create new list data
     else:
@@ -55,49 +55,53 @@ def save_deployment_gear(gear_name, username: str):
         data_for_deployment_gear.append(gear_name)
 
         #Save updated list back to file
-        with open(deployment_gear_file, 'w') as f:
+        with open(path, 'w') as f:
             json.dump(data_for_deployment_gear, f, indent=4)
 
 # -----------------------------------------------------------------------------------------
 # Loads and returns a list of gear names from a JSON file. Returns None if file missing or empty.
 def load_deployment_gear(username: str):
-    filename = f"{username}_deployment_gear.json"
 
-    if not os.path.exists(filename):
+    #If user data folder does not exist, create it.
+    if not os.path.isdir("user data"):
+        os.mkdir("user data")
+    path =os.path.abspath("user data/"+f"{username}_deployment_gear.json")
+
+    if not os.path.isfile(path):
         return None
 
     try:
-        with open(filename, 'r') as f:
+        with open(path, 'r') as f:
             data = json.load(f)
             if isinstance(data, list) and data:
                 return data
             else:
                 return None
     except json.JSONDecodeError:
-        print(f"[Error] Failed to decode JSON in: {filename}")
+        print(f"[Error] Failed to decode JSON in: {path}")
         return None
 
 # -----------------------------------------------------------------------------------------
 # Deletes a specific gear entry from a JSON list file.
 def delete_deployment_gear(gear_name, username: str):
-    filename = f"{username}_deployment_gear.json"
+    path = os.path.abspath("user data/"+f"{username}_deployment_gear.json")
 
     # Check if the file exists
-    if not os.path.exists(filename):
-        print(f"[Error] File not found: {filename}")
+    if not os.path.isfile(path):
+        print(f"[Error] File not found: {path}")
         return
 
     # Load the existing JSON data
     try:
-        with open(filename, "r") as f:
+        with open(path, "r") as f:
             data = json.load(f)
     except json.JSONDecodeError:
-        print(f"[Error] Failed to decode JSON in: {filename}")
+        print(f"[Error] Failed to decode JSON in: {path}")
         return
 
     # Ensure data is a list
     if not isinstance(data, list):
-        print(f"[Error] Data in {filename} is not a valid list.")
+        print(f"[Error] Data in {path} is not a valid list.")
         return
 
     # Attempt to remove the gear entry
@@ -105,17 +109,18 @@ def delete_deployment_gear(gear_name, username: str):
         data.remove(gear_name)
 
         # Write the updated list back to the file
-        with open(filename, "w") as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=4)
     else:
         print(f"[Warning] Gear '{gear_name}' not found in file.")
 
 # -----------------------------------------------------------------------------------------
 def save_deployment_gear_score(score: int, gear_name: str, username: str):
-    filename = f"{username}_deployment_scores.json"
+    path = os.path.abspath("user data/" +f"{username}_deployment_scores.json")
+
     # Step 1: Load existing data (or create empty structure if file doesn't exist)
-    if os.path.exists(filename):
-        with open(filename, "r") as f:
+    if os.path.isfile(path):
+        with open(path, "r") as f:
             data = json.load(f)
     else:
         data = {}
@@ -127,20 +132,20 @@ def save_deployment_gear_score(score: int, gear_name: str, username: str):
     data[gear_name].append(score)
 
     # Step 3: Write the updated data back to file
-    with open(filename, "w") as f:
+    with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
 # -----------------------------------------------------------------------------------------
 def delete_deployment_gear_scores(gear_name, username: str):
-    filename = f"{username}_deployment_times.json"
+    path = os.path.abspath("user data/" +f"{username}_deployment_times.json")
 
     # Step 1: Check if the file exists
-    if not os.path.exists(filename):
+    if not os.path.isfile(path):
         print("No data file found.")
         return
 
     # Step 2: Load the existing data
-    with open(filename, "r") as f:
+    with open(path, "r") as f:
         data = json.load(f)
 
     # Step 3: Check if gear_name exists
@@ -150,12 +155,12 @@ def delete_deployment_gear_scores(gear_name, username: str):
         return
 
     # Step 4: Save updated data back to file
-    with open(filename, "w") as f:
+    with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
 # -----------------------------------------------------------------------------------------
 def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
-    filename = f"{username}_deployment_scores.json"
+    path = os.path.abspath("user data/"+f"{username}_deployment_scores.json")
 
     def time_to_milliseconds(time_str):
         hours, minutes, rest = time_str.split(':')
@@ -170,7 +175,7 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
 
     #Attempt to load data file & return empty list of fail.
     try:
-        with open(filename, 'r') as file:
+        with open(path, 'r') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Error loading JSON: {e}")
@@ -206,13 +211,18 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
 
 # -----------------------------------------------------------------------------------------
 def create_user_data_files(sender, app_data, user_data):
+
+    # If user data folder does not exist, create it.
+    if not os.path.isdir("user data"):
+        os.mkdir("user data")
+
     username = dpg.get_value(user_data[1])
     password = dpg.get_value(user_data[2])
-    account_database_file = "account_database"
+    path = os.path.abspath("user data/"+"account_database")
 
     #Read in or create account database file
-    if os.path.exists(account_database_file):
-        with open(account_database_file, "r") as f:
+    if os.path.isfile(path):
+        with open(path, "r") as f:
             data_for_accounts = json.load(f)
     else:
         data_for_accounts = {}
@@ -233,7 +243,7 @@ def create_user_data_files(sender, app_data, user_data):
     data_for_accounts[hashed_username].append(hashed_and_salted_password)
 
     #Append user to account database file
-    with open(account_database_file, "w") as f:
+    with open(path, "w") as f:
         json.dump(data_for_accounts, f, indent=4)
 
     return "Creation Successful"
@@ -241,11 +251,11 @@ def create_user_data_files(sender, app_data, user_data):
 # -----------------------------------------------------------------------------------------
 def _delete_user_data_files(sender, app_data, user_data):
     username = dpg.get_value(user_data[1])
-    account_database_file = "account_database"
+    path = os.path.abspath("user data/"+"account_database")
 
     #Read in or create account database file
-    if os.path.exists(account_database_file):
-        with open(account_database_file, "r") as f:
+    if os.path.isfile(path):
+        with open(path, "r") as f:
             data_for_accounts = json.load(f)
     else:
         return "Does not exist" #Because user doesn't exist if account database doesn't exist
@@ -256,10 +266,10 @@ def _delete_user_data_files(sender, app_data, user_data):
     #Checks if username already exists.
     if hashed_username in data_for_accounts:
         del data_for_accounts[hashed_username]
-        with open(account_database_file, "w") as f:
+        with open(path, "w") as f:
             json.dump(data_for_accounts, f, indent=4)
-        deployment_gear_file = f"{username}_deployment_gear.json"
-        deployment_gear_scores_file = f"{username}_deployment_gear_scores.json"
+        deployment_gear_file = os.path.abspath("user data/"+f"{username}_deployment_gear.json")
+        deployment_gear_scores_file = os.path.abspath("user data/"+f"{username}_deployment_gear_scores.json")
         try:
             os.remove(deployment_gear_file)
         except FileNotFoundError:
@@ -276,11 +286,11 @@ def _verify_user_password(sender, app_data, user_data):
     username = dpg.get_value(user_data[1])
     hashed_username = hashlib.sha256(username.encode("utf-8")).hexdigest()
     password = dpg.get_value(user_data[2])
-    account_database_file = "account_database"
+    path = os.path.abspath("user data/"+"account_database")
 
     # Read in or create account database file
-    if os.path.exists(account_database_file):
-        with open(account_database_file, "r") as f:
+    if os.path.isfile(path):
+        with open(path, "r") as f:
             data_for_accounts = json.load(f)
     else:
         return "User not in database"
