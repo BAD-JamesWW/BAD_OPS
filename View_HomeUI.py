@@ -384,6 +384,24 @@ def _show_input_field(sender, app_data, user_data):
         )
 
 # -----------------------------------------------------------------------------------------
+def key_press_callback(sender, app_data):
+    global inputInProgress
+    # FYI == checks if 2 values are the same, "is" checks if 2 things are the same in memory.
+    if app_data == dpg.mvKey_Escape:
+
+        #delete current input fields.
+        for item in dpg.get_all_items():
+            info = dpg.get_item_info(item)
+            if info["type"].startswith("mvAppItemType::mvInput"):
+                dpg.delete_item(item)
+        #reset input field's tracker
+        inputInProgress = False
+
+# -----------------------------------------------------------------------------------------
+with dpg.handler_registry():
+    dpg.add_key_press_handler(callback=key_press_callback)
+
+# -----------------------------------------------------------------------------------------
 def _create_homeUI():
     # === Background Image ===
     with dpg.texture_registry(show=False):
