@@ -30,6 +30,7 @@ manual_ready = False
 manual_stop = False
 manual_eighty_six = False
 timer_display_tag = "timer_display"
+rep_count_default_text = "Rep. Count:"
 
 # -----------------------------------------------------------------------------------------
 # Load voice model and audio
@@ -80,6 +81,7 @@ def stop_training_early():
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
     session_active = False
+    _reset_rep_counter()
     enable_ui_controls()
 
 # -----------------------------------------------------------------------------------------
@@ -143,6 +145,16 @@ def _show_manual_eighty_six_button():
 # -----------------------------------------------------------------------------------------
 def set_window_closable(state: bool):
     dpg.configure_item("tag_timer", no_title_bar=not state)
+
+# -----------------------------------------------------------------------------------------
+def _update_rep_counter(repCount: int):
+    global repetitions
+    dpg.set_value("rep_count_txt", f"{rep_count_default_text} " + str(repCount) + "/" + str(repetitions))
+
+# -----------------------------------------------------------------------------------------
+def _reset_rep_counter():
+    global rep_count_default_text
+    dpg.set_value("rep_count_txt", rep_count_default_text)
 
 # -----------------------------------------------------------------------------------------
 def listen_for_commands():
@@ -213,6 +225,7 @@ def listen_for_commands():
                 _hide_manual_eighty_six_button()
                 current_round += 1
                 Control.play_sound("assets/audio/heard.wav")
+                _update_rep_counter(current_round)
                 break
             elif speech.endswith("eighty") or speech == "eightysix":
                 stop_timer_internal(eighty_six=True)
@@ -227,6 +240,7 @@ def listen_for_commands():
                 _hide_manual_eighty_six_button()
                 current_round += 1
                 Control.play_sound("assets/audio/heard.wav")
+                _update_rep_counter(current_round)
                 break
             elif manual_eighty_six:
                 manual_eighty_six = False #resets value immediately
@@ -242,6 +256,7 @@ def listen_for_commands():
 
     Control.play_sound("assets/audio/training_complete.wav")
     session_active = False
+    _reset_rep_counter()
     enable_ui_controls()
 
 # -----------------------------------------------------------------------------------------
@@ -275,7 +290,7 @@ def _manual_eighty_six_callback():
 
 # -----------------------------------------------------------------------------------------
 def show_timer(sender, app_data, user_data):
-    global gear
+    global gear, rep_count_default_text
     gear = user_data[0]
     previous_window = user_data[1]
     window_tag = "tag_timer"
@@ -287,6 +302,11 @@ def show_timer(sender, app_data, user_data):
     Control.play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
     with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True, on_close=lambda: (Control._show_window(previous_window), Control.play_sound("assets/audio/ui_sound_05.wav", wait=False), Control._delete_window(window_tag))):
+
+        with dpg.group(horizontal=True):
+            dpg.add_spacer(width=150)
+            dpg.add_text(rep_count_default_text, tag="rep_count_txt")
+
         dpg.add_text("00:00:00.000", tag=timer_display_tag)
         dpg.add_spacer(height=10)
 
