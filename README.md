@@ -51,14 +51,20 @@ This project uses:
 - **Add**: Add a gear entry to the list.
 - **Remove**: Remove a selected gear entry.
 - **Nuke**: Remove all gear entries.
-- **Train**: Select a gear item and begin a training session.
-- **Set Reps**: Configure the number of repetitions before starting a session.
+- **Train**: Each gear will be a button. Select a gear item to display training options.
+- **(+ Acc.)**: Create a local account in order to login.
+- **Login**: Login to a local account before training options are available.
+- **Logout**: Logout as needed.
+- **(- Acc.)**: Delete an account and all its corresponding data will be deleted locally.
+
 
 ---
 
 ### **Starting a Training Session**
-1. Click **Start Session (Voice‑Controlled)**.
+1. **Set Reps**: Configure the number of repetitions before starting a session.
+1. Click **Start Session**.
 2. Follow the voice prompts:
+   **Both Manual and Audio inputs are accepted**
    - Program says: `Ready` → User responds: `Ready`
      - Program replies: `Ten-Four` (acknowledgment)
    - Program waits a random 1–2 seconds, giving a beep for each second.
