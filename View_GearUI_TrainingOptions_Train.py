@@ -50,6 +50,7 @@ def update_timer():
         dpg.set_value(timer_display_tag, f"{int(h):02}:{int(m):02}:{s:02}.{ms:03}")
         dpg.set_frame_callback(dpg.get_frame_count() + 1, update_timer)
 
+
 # -----------------------------------------------------------------------------------------
 def start_timer():
     global timer_running, start_time, elapsed_time
@@ -58,8 +59,9 @@ def start_timer():
         timer_running = True
         update_timer()
 
+
 # -----------------------------------------------------------------------------------------
-def stop_timer_internal(eighty_six = False):
+def stop_timer_internal(eighty_six=False):
     global timer_running
     timer_running = False
     if not eighty_six:
@@ -67,12 +69,14 @@ def stop_timer_internal(eighty_six = False):
     else:
         Control._save_deployment_gear_score("EightySix", gear)
 
+
 # -----------------------------------------------------------------------------------------
 def reset_timer():
     global timer_running, elapsed_time
     timer_running = False
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
+
 
 # -----------------------------------------------------------------------------------------
 def stop_training_early():
@@ -84,6 +88,7 @@ def stop_training_early():
     _reset_rep_counter()
     enable_ui_controls()
 
+
 # -----------------------------------------------------------------------------------------
 def raise_thread_priority():
     try:
@@ -91,6 +96,7 @@ def raise_thread_priority():
             ctypes.windll.kernel32.GetCurrentThread(), 2)
     except Exception as e:
         print("Could not raise thread priority:", e)
+
 
 # -----------------------------------------------------------------------------------------
 def disable_ui_controls():
@@ -102,6 +108,7 @@ def disable_ui_controls():
     dpg.hide_item("repetition_input")
     set_window_closable(False)
 
+
 # -----------------------------------------------------------------------------------------
 def enable_ui_controls():
     dpg.enable_item("start_session_btn")
@@ -112,49 +119,59 @@ def enable_ui_controls():
     dpg.show_item("repetition_input")
     set_window_closable(True)
 
+
 # -----------------------------------------------------------------------------------------
 def _hide_manual_ready_button():
     if dpg.is_item_shown("manual_ready_btn"):
         dpg.hide_item("manual_ready_btn")
+
 
 # -----------------------------------------------------------------------------------------
 def _hide_manual_stop_button():
     if dpg.is_item_shown("manual_stop_btn"):
         dpg.hide_item("manual_stop_btn")
 
+
 # -----------------------------------------------------------------------------------------
 def _hide_manual_eighty_six_button():
     if dpg.is_item_shown("manual_eighty_six_btn"):
         dpg.hide_item("manual_eighty_six_btn")
+
 
 # -----------------------------------------------------------------------------------------
 def _show_manual_ready_button():
     if not dpg.is_item_shown("manual_ready_btn"):
         dpg.show_item("manual_ready_btn")
 
+
 # -----------------------------------------------------------------------------------------
 def _show_manual_stop_button():
     if not dpg.is_item_shown("manual_stop_btn"):
         dpg.show_item("manual_stop_btn")
+
 
 # -----------------------------------------------------------------------------------------
 def _show_manual_eighty_six_button():
     if not dpg.is_item_shown("manual_eighty_six_btn"):
         dpg.show_item("manual_eighty_six_btn")
 
+
 # -----------------------------------------------------------------------------------------
 def set_window_closable(state: bool):
     dpg.configure_item("tag_timer", no_title_bar=not state)
+
 
 # -----------------------------------------------------------------------------------------
 def _update_rep_counter(repCount: int):
     global repetitions
     dpg.set_value("rep_count_txt", f"{rep_count_default_text} " + str(repCount) + "/" + str(repetitions))
 
+
 # -----------------------------------------------------------------------------------------
 def _reset_rep_counter():
     global rep_count_default_text
     dpg.set_value("rep_count_txt", rep_count_default_text)
+
 
 # -----------------------------------------------------------------------------------------
 def listen_for_commands():
@@ -168,8 +185,8 @@ def listen_for_commands():
     recognizer = KaldiRecognizer(vosk_model, 16000)
 
     while current_round < repetitions:
-        
-        #Cleaning to prevent next recog. misinterpretation.
+
+        # Cleaning to prevent next recog. misinterpretation.
         recognizer.Reset()
 
         Control.play_sound("assets/audio/ready.wav", True)
@@ -177,49 +194,72 @@ def listen_for_commands():
 
         while True:
             data = stream.read(1024, exception_on_overflow=False)
+
+            # Get text from either final or partial result
             if recognizer.AcceptWaveform(data):
-                if json.loads(recognizer.Result()).get("text") == "ready":
-                    _hide_manual_ready_button()
-                    manual_ready = False #to reset
-                    Control.play_sound("assets/audio/tenfour.wav",True)
-                    break
-            elif manual_ready:
+                result_json = json.loads(recognizer.Result())
+                speech = result_json.get("text", "").strip().lower()
+            else:
+                result_json = json.loads(recognizer.PartialResult())
+                speech = result_json.get("partial", "").strip().lower()
+
+            # Manual override
+            if manual_ready:
                 _hide_manual_ready_button()
-                manual_ready = False #to reset
+                manual_ready = False  # to reset
                 Control.play_sound("assets/audio/tenfour.wav", True)
                 break
-        
+
+            if not speech:
+                continue
+
+            words = speech.split()
+
+            # "ready" as a word anywhere in the text
+            if "ready" in words:
+                _hide_manual_ready_button()
+                manual_ready = False  # to reset
+                Control.play_sound("assets/audio/tenfour.wav", True)
+                break
+
         delay = random.randint(1, 20)
-                
-        #So timer can make sound every second
+
+        # So timer can make sound every second
         for i in range(delay):
             Control.play_sound("assets/audio/ui_sound_04.wav", wait=False)
             time.sleep(1)
             i += 1
-            #So timer can be stopped during countdown.
+            # So timer can be stopped during countdown.
             if session_active == False:
-                reset_timer()                
+                reset_timer()
                 stream.stop_stream()
                 stream.close()
                 mic.terminate()
                 return
-                
-        
+
         reset_timer()
         Control.play_sound("assets/audio/deploy.wav", wait=False)
         start_timer()
         _show_manual_stop_button()
         _show_manual_eighty_six_button()
-        
-        #Cleaning to prevent next recog. misinterpretation.
+
+        # Cleaning to prevent next recog. misinterpretation.
         recognizer.Reset()
 
         while True:
             data = stream.read(1024, exception_on_overflow=False)
+
+            # Get text from either final or partial result
             if recognizer.AcceptWaveform(data):
-                continue
-            speech = json.loads(recognizer.PartialResult()).get("partial", "").strip()
-            if speech.endswith("stop") or speech == "stop":
+                result_json = json.loads(recognizer.Result())
+                speech = result_json.get("text", "").strip().lower()
+            else:
+                result_json = json.loads(recognizer.PartialResult())
+                speech = result_json.get("partial", "").strip().lower()
+
+            # Manual overrides always win
+            if manual_stop:
+                manual_stop = False  # resets value immediately
                 stop_timer_internal()
                 _hide_manual_stop_button()
                 _hide_manual_eighty_six_button()
@@ -227,14 +267,22 @@ def listen_for_commands():
                 Control.play_sound("assets/audio/heard.wav")
                 _update_rep_counter(current_round)
                 break
-            elif speech.endswith("eighty") or speech == "eightysix":
+
+            if manual_eighty_six:
+                manual_eighty_six = False  # resets value immediately
                 stop_timer_internal(eighty_six=True)
                 _hide_manual_stop_button()
                 _hide_manual_eighty_six_button()
                 Control.play_sound("assets/audio/heard.wav")
                 break
-            elif manual_stop:
-                manual_stop = False #resets value immediately
+
+            if not speech:
+                continue
+
+            words = speech.split()
+
+            # --- STOP detection: "stop" as a word anywhere ---
+            if "stop" in words:
                 stop_timer_internal()
                 _hide_manual_stop_button()
                 _hide_manual_eighty_six_button()
@@ -242,8 +290,16 @@ def listen_for_commands():
                 Control.play_sound("assets/audio/heard.wav")
                 _update_rep_counter(current_round)
                 break
-            elif manual_eighty_six:
-                manual_eighty_six = False #resets value immediately
+
+            # --- EIGHTY SIX detection ---
+            # 1) phrase "eighty six" anywhere
+            # 2) numeric "86" as a word
+            # 3) "eighty" as a word (first-part shortcut)
+            if (
+                    "eighty six" in speech
+                    or "86" in words
+                    or "eighty" in words
+            ):
                 stop_timer_internal(eighty_six=True)
                 _hide_manual_stop_button()
                 _hide_manual_eighty_six_button()
@@ -259,6 +315,7 @@ def listen_for_commands():
     _reset_rep_counter()
     enable_ui_controls()
 
+
 # -----------------------------------------------------------------------------------------
 def start_session_callback():
     global current_round, repetitions, session_active
@@ -270,11 +327,13 @@ def start_session_callback():
     disable_ui_controls()
     threading.Thread(target=listen_for_commands, daemon=True).start()
 
+
 # -----------------------------------------------------------------------------------------
 def _manual_ready_callback():
     global manual_ready
     manual_ready = True
     _hide_manual_ready_button()
+
 
 # -----------------------------------------------------------------------------------------
 def _manual_stop_callback():
@@ -282,11 +341,13 @@ def _manual_stop_callback():
     manual_stop = True
     _hide_manual_stop_button()
 
+
 # -----------------------------------------------------------------------------------------
 def _manual_eighty_six_callback():
     global manual_eighty_six
     manual_eighty_six = True
     _hide_manual_eighty_six_button()
+
 
 # -----------------------------------------------------------------------------------------
 def show_timer(sender, app_data, user_data):
@@ -296,13 +357,15 @@ def show_timer(sender, app_data, user_data):
     window_tag = "tag_timer"
 
     Control._check_window_exists(window_tag)
-    
+
     dpg.hide_item(previous_window)
 
     Control.play_sound("assets/audio/ui_sound_01.wav", wait=False)
 
-    with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True, on_close=lambda: (Control._show_window(previous_window), Control.play_sound("assets/audio/ui_sound_05.wav", wait=False), Control._delete_window(window_tag))):
-
+    with dpg.window(label="Timer", tag=window_tag, width=445, height=570, no_title_bar=False, no_move=True,
+                    on_close=lambda: (Control._show_window(previous_window),
+                                      Control.play_sound("assets/audio/ui_sound_05.wav", wait=False),
+                                      Control._delete_window(window_tag))):
         with dpg.group(horizontal=True):
             dpg.add_spacer(width=150)
             dpg.add_text(rep_count_default_text, tag="rep_count_txt")
@@ -324,25 +387,27 @@ def show_timer(sender, app_data, user_data):
         with dpg.theme() as red_button_theme:
             with dpg.theme_component(dpg.mvButton):
                 dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))  # Dark red hover
-                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))   # Bright red active
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))  # Bright red active
         with dpg.theme() as red_int_button_theme:
             with dpg.theme_component(dpg.mvInputInt):
                 dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (150, 0, 0, 255))  # Dark red hover
-                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))   # Bright red active
-
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (200, 0, 0, 255))  # Bright red active
 
         with dpg.group(horizontal=True):
             dpg.add_button(label="Reset", callback=reset_timer, tag="reset_btn")
             dpg.add_button(label="Stop Training (No Log)", callback=stop_training_early, tag="stop_session_btn")
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Manual-Ready", show=False, callback=_manual_ready_callback,width= 160,height=80, tag="manual_ready_btn")
-            dpg.add_button(label="Manual-Stop", show=False, callback=_manual_stop_callback, width= 160,height=80, tag="manual_stop_btn")
-            dpg.add_button(label="Manual-EightySix", show=False, callback=_manual_eighty_six_callback, width= 160,height=80, tag="manual_eighty_six_btn")
+            dpg.add_button(label="Manual-Ready", show=False, callback=_manual_ready_callback, width=160, height=80,
+                           tag="manual_ready_btn")
+            dpg.add_button(label="Manual-Stop", show=False, callback=_manual_stop_callback, width=160, height=80,
+                           tag="manual_stop_btn")
+            dpg.add_button(label="Manual-EightySix", show=False, callback=_manual_eighty_six_callback, width=160,
+                           height=80, tag="manual_eighty_six_btn")
 
         dpg.add_spacer(height=10)
         dpg.add_input_int(label="Repetitions (N)", default_value=1, tag="repetition_input", min_value=1)
         dpg.add_button(label="Start Session", callback=start_session_callback, tag="start_session_btn")
-        
+
         dpg.bind_item_theme("reset_btn", red_button_theme)
         dpg.bind_item_theme("manual_ready_btn", red_button_theme)
         dpg.bind_item_theme("manual_stop_btn", red_button_theme)
@@ -353,4 +418,3 @@ def show_timer(sender, app_data, user_data):
 
     dpg.focus_item(window_tag)
     dpg.bind_item_theme(window_tag, parent_theme)
-
