@@ -188,6 +188,9 @@ def get_sorted_deployment_scores(key_name: str) -> list:
         View_GearUI_TrainingOptions._popup_generic_message("User must be logged in to get deployment \nscores.")
         return []
 
+    if len(Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)) == 0:
+        View_GearUI_TrainingOptions._popup_generic_message("No scores available.")
+
     return Model._get_sorted_deployment_scores(key_name, username_of_user_logged_in)
 
 # -----------------------------------------------------------------------------------------
@@ -201,6 +204,11 @@ def _logout_user():
 
         #Remove gear buttons from home UI
         View_HomeUI._clear_gear_buttons()
+
+        # delete corresponding dpg items in memory, this is safe because user is logging out and won't care if their gear UI is removed.
+        for gear in list(gears):
+            gearButtonToRemove = gears.pop(str(gear))
+            dpg.delete_item(gearButtonToRemove["gear_button_tag"])
 
         #Change header text of HomeUI
         dpg.set_value("homescreen_header_text", "Gear")
@@ -254,6 +262,11 @@ def _delete_user_data(sender, app_data, user_data):
     result =  Model._delete_user_data_files(sender, app_data, user_data)
 
     View_HomeUI._popup_delete_user_result(dpg.get_value(user_data[1]), result)
+
+    #delete corresponding dpg items in memory
+    for gear in list(gears):
+        gearButtonToRemove = gears.pop(str(gear))
+        dpg.delete_item(gearButtonToRemove["gear_button_tag"])
 
     # So busy popup goes away
     _check_window_exists(View_HomeUI.BUSY_DELETING_USER_WINDOW_TAG)

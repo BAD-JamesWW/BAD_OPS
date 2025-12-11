@@ -178,8 +178,7 @@ def _get_sorted_deployment_scores(key_name: str, username: str) -> list:
         with open(path, 'r') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Error loading JSON: {e}")
-        return []
+        return [] #If no file is found, return no data.
 
     #Display popups and return empty list if corresponding gear time doesn't exist
     if key_name not in data:

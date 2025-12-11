@@ -85,6 +85,8 @@ def stop_training_early():
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
     session_active = False
+    _hide_manual_stop_button()
+    _hide_manual_stop_button()
     _reset_rep_counter()
     enable_ui_controls()
 
