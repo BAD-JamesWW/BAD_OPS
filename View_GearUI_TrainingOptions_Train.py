@@ -29,6 +29,8 @@ session_active = False
 manual_ready = False
 manual_stop = False
 manual_eighty_six = False
+mic = None
+stream = None
 timer_display_tag = "timer_display"
 rep_count_default_text = "Rep. Count:"
 
@@ -79,14 +81,25 @@ def reset_timer():
 
 
 # -----------------------------------------------------------------------------------------
+# FIX: do NOT close/terminate audio here (UI thread). Only signal the worker to stop.
 def stop_training_early():
-    global timer_running, elapsed_time, session_active
+    global timer_running, elapsed_time, session_active, manual_ready, manual_stop, manual_eighty_six
+
     timer_running = False
     elapsed_time = 0
     dpg.set_value(timer_display_tag, "00:00:00.000")
+
+    # Tell the listening thread to exit ASAP
     session_active = False
+
+    # Clear any manual flags
+    manual_ready = False
+    manual_stop = False
+    manual_eighty_six = False
+
     _hide_manual_stop_button()
     _hide_manual_eighty_six_button()
+    _hide_manual_ready_button()
     _reset_rep_counter()
     enable_ui_controls()
 
@@ -177,7 +190,7 @@ def _reset_rep_counter():
 
 # -----------------------------------------------------------------------------------------
 def listen_for_commands():
-    global current_round, repetitions, session_active, manual_ready, manual_stop, manual_eighty_six
+    global current_round, repetitions, session_active, manual_ready, manual_stop, manual_eighty_six, stream, mic
 
     raise_thread_priority()
     mic = pyaudio.PyAudio()
@@ -186,133 +199,181 @@ def listen_for_commands():
     stream.start_stream()
     recognizer = KaldiRecognizer(vosk_model, 16000)
 
-    while current_round < repetitions:
+    try:
+        while current_round < repetitions:
 
-        # Cleaning to prevent next recog. misinterpretation.
-        recognizer.Reset()
-
-        Control.play_sound("assets/audio/ready.wav", True)
-        _show_manual_ready_button()
-
-        while True:
-            data = stream.read(1024, exception_on_overflow=False)
-
-            # Get text from either final or partial result
-            if recognizer.AcceptWaveform(data):
-                result_json = json.loads(recognizer.Result())
-                speech = result_json.get("text", "").strip().lower()
-            else:
-                result_json = json.loads(recognizer.PartialResult())
-                speech = result_json.get("partial", "").strip().lower()
-
-            # Manual override
-            if manual_ready:
-                _hide_manual_ready_button()
-                manual_ready = False  # to reset
-                Control.play_sound("assets/audio/tenfour.wav", True)
+            # If user stopped training early, exit cleanly
+            if not session_active:
                 break
 
-            if not speech:
-                continue
+            # Cleaning to prevent next recog. misinterpretation.
+            recognizer.Reset()
 
-            words = speech.split()
+            Control.play_sound("assets/audio/ready.wav", True)
+            _show_manual_ready_button()
 
-            # "ready" as a word anywhere in the text
-            if "ready" in words:
-                _hide_manual_ready_button()
-                manual_ready = False  # to reset
-                Control.play_sound("assets/audio/tenfour.wav", True)
+            # -------------------- READY LISTEN LOOP --------------------
+            while True:
+                if not session_active:
+                    break
+
+                try:
+                    data = stream.read(1024, exception_on_overflow=False)
+                except OSError:
+                    # Stream closed during shutdown
+                    session_active = False
+                    break
+
+                # Get text from either final or partial result
+                if recognizer.AcceptWaveform(data):
+                    result_json = json.loads(recognizer.Result())
+                    speech = result_json.get("text", "").strip().lower()
+                else:
+                    result_json = json.loads(recognizer.PartialResult())
+                    speech = result_json.get("partial", "").strip().lower()
+
+                # Manual override
+                if manual_ready:
+                    _hide_manual_ready_button()
+                    manual_ready = False  # to reset
+                    Control.play_sound("assets/audio/tenfour.wav", True)
+                    break
+
+                if not speech:
+                    continue
+
+                words = speech.split()
+
+                # "ready" as a word anywhere in the text
+                if "ready" in words:
+                    _hide_manual_ready_button()
+                    manual_ready = False  # to reset
+                    Control.play_sound("assets/audio/tenfour.wav", True)
+                    break
+
+            if not session_active:
                 break
 
-        delay = random.randint(1, 20)
+            delay = random.randint(1, 20)
 
-        # So timer can make sound every second
-        for i in range(delay):
-            Control.play_sound("assets/audio/ui_sound_04.wav", wait=False)
-            time.sleep(1)
-            i += 1
-            # So timer can be stopped during countdown.
-            if session_active == False:
+            # So timer can make sound every second
+            for i in range(delay):
+                if not session_active:
+                    break
+                Control.play_sound("assets/audio/ui_sound_04.wav", wait=False)
+                time.sleep(1)
+
+            if not session_active:
                 reset_timer()
-                stream.stop_stream()
-                stream.close()
-                mic.terminate()
-                return
-
-        reset_timer()
-        Control.play_sound("assets/audio/deploy.wav", wait=False)
-        start_timer()
-        _show_manual_stop_button()
-        _show_manual_eighty_six_button()
-
-        # Cleaning to prevent next recog. misinterpretation.
-        recognizer.Reset()
-
-        while True:
-            data = stream.read(1024, exception_on_overflow=False)
-
-            # Get text from either final or partial result
-            if recognizer.AcceptWaveform(data):
-                result_json = json.loads(recognizer.Result())
-                speech = result_json.get("text", "").strip().lower()
-            else:
-                result_json = json.loads(recognizer.PartialResult())
-                speech = result_json.get("partial", "").strip().lower()
-
-            # Manual overrides always win
-            if manual_stop:
-                manual_stop = False  # resets value immediately
-                stop_timer_internal()
-                _hide_manual_stop_button()
-                _hide_manual_eighty_six_button()
-                current_round += 1
-                Control.play_sound("assets/audio/heard.wav")
-                _update_rep_counter(current_round)
                 break
 
-            if manual_eighty_six:
-                manual_eighty_six = False  # resets value immediately
-                stop_timer_internal(eighty_six=True)
-                _hide_manual_stop_button()
-                _hide_manual_eighty_six_button()
-                Control.play_sound("assets/audio/heard.wav")
+            reset_timer()
+            Control.play_sound("assets/audio/deploy.wav", wait=False)
+            start_timer()
+            _show_manual_stop_button()
+            _show_manual_eighty_six_button()
+
+            # Cleaning to prevent next recog. misinterpretation.
+            recognizer.Reset()
+
+            # -------------------- STOP/EIGHTY-SIX LISTEN LOOP --------------------
+            while True:
+                if not session_active:
+                    break
+
+                try:
+                    data = stream.read(1024, exception_on_overflow=False)
+                except OSError:
+                    # Stream closed during shutdown
+                    session_active = False
+                    break
+
+                # Get text from either final or partial result
+                if recognizer.AcceptWaveform(data):
+                    result_json = json.loads(recognizer.Result())
+                    speech = result_json.get("text", "").strip().lower()
+                else:
+                    result_json = json.loads(recognizer.PartialResult())
+                    speech = result_json.get("partial", "").strip().lower()
+
+                # Manual overrides always win
+                if manual_stop:
+                    manual_stop = False  # resets value immediately
+                    stop_timer_internal()
+                    _hide_manual_stop_button()
+                    _hide_manual_eighty_six_button()
+                    current_round += 1
+                    Control.play_sound("assets/audio/heard.wav")
+                    _update_rep_counter(current_round)
+                    break
+
+                if manual_eighty_six:
+                    manual_eighty_six = False  # resets value immediately
+                    stop_timer_internal(eighty_six=True)
+                    _hide_manual_stop_button()
+                    _hide_manual_eighty_six_button()
+                    Control.play_sound("assets/audio/heard.wav")
+                    break
+
+                if not speech:
+                    continue
+
+                words = speech.split()
+
+                # --- STOP detection: "stop" as a word anywhere ---
+                if "stop" in words:
+                    stop_timer_internal()
+                    _hide_manual_stop_button()
+                    _hide_manual_eighty_six_button()
+                    current_round += 1
+                    Control.play_sound("assets/audio/heard.wav")
+                    _update_rep_counter(current_round)
+                    break
+
+                # --- EIGHTY SIX detection ---
+                # 1) phrase "eighty six" anywhere
+                # 2) numeric "86" as a word
+                # 3) "eighty" as a word (first-part shortcut)
+                if (
+                        "eighty six" in speech
+                        or "86" in words
+                        or "eighty" in words
+                ):
+                    stop_timer_internal(eighty_six=True)
+                    _hide_manual_stop_button()
+                    _hide_manual_eighty_six_button()
+                    Control.play_sound("assets/audio/heard.wav")
+                    break
+
+            if not session_active:
+                reset_timer()
                 break
 
-            if not speech:
-                continue
+    finally:
+        # FIX: audio cleanup happens ONLY here, in the worker thread.
+        try:
+            if stream is not None:
+                try:
+                    if stream.is_active():
+                        stream.stop_stream()
+                except Exception:
+                    pass
+                try:
+                    stream.close()
+                except Exception:
+                    pass
+            if mic is not None:
+                try:
+                    mic.terminate()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
-            words = speech.split()
+    # If we stopped early, don't play "training complete"
+    if session_active:
+        Control.play_sound("assets/audio/training_complete.wav")
 
-            # --- STOP detection: "stop" as a word anywhere ---
-            if "stop" in words:
-                stop_timer_internal()
-                _hide_manual_stop_button()
-                _hide_manual_eighty_six_button()
-                current_round += 1
-                Control.play_sound("assets/audio/heard.wav")
-                _update_rep_counter(current_round)
-                break
-
-            # --- EIGHTY SIX detection ---
-            # 1) phrase "eighty six" anywhere
-            # 2) numeric "86" as a word
-            # 3) "eighty" as a word (first-part shortcut)
-            if (
-                    "eighty six" in speech
-                    or "86" in words
-                    or "eighty" in words
-            ):
-                stop_timer_internal(eighty_six=True)
-                _hide_manual_stop_button()
-                _hide_manual_eighty_six_button()
-                Control.play_sound("assets/audio/heard.wav")
-                break
-
-    stream.stop_stream()
-    stream.close()
-    mic.terminate()
-
-    Control.play_sound("assets/audio/training_complete.wav")
     session_active = False
     _reset_rep_counter()
     enable_ui_controls()
